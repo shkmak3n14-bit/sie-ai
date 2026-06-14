@@ -1,0 +1,140 @@
+"""OpenAI LLM integration for S.I.E."""
+
+from __future__ import annotations
+
+import os
+
+from dotenv import load_dotenv
+from openai import OpenAI
+
+from sie.flow import advance_phase, get_name_response_hint, get_phase_instruction
+from sie.humor import get_humor_instruction
+from sie.personality import SYSTEM_PROMPT
+from sie.session import Session
+
+load_dotenv()
+
+DEFAULT_MODEL = "gpt-4o"
+TEMPERATURE = 0.7
+
+
+def _get_client() -> OpenAI:
+    api_key = os.getenv("OPENAI_API_KEY")
+    if not api_key:
+        raise ValueError(
+            "OPENAI_API_KEY が設定されていません。.env ファイルを確認してください。"
+        )
+    return OpenAI(api_key=api_key)
+
+
+def _get_model() -> str:
+    return os.getenv("OPENAI_MODEL", DEFAULT_MODEL)
+
+
+def _build_user_message(user_input: str, instructions: list[str]) -> str:
+    if not instructions:
+        return user_input
+    meta = "\n".join(f"- {item}" for item in instructions)
+    return f"{user_input}\n\n[内部指示:\n{meta}]"
+
+
+def generate_reply(session: Session, user_input: str) -> str:
+    """Generate S.I.E. response for the given user input."""
+    phase_instruction = get_phase_instruction(session)
+    name_hint = get_name_response_hint(session, user_input)
+
+    advance_phase(session, user_input)
+
+    instructions: list[str] = [phase_instruction]
+    if name_hint:
+        instructions.append(name_hint)
+
+    humor_instruction = get_humor_instruction(session)
+    if humor_instruction:
+        instructions.append(humor_instruction)
+
+    if user_input.strip():
+        session.add_user_message(user_input.strip())
+
+    client = _get_client()
+    messages = [{"role": "system", "content": SYSTEM_PROMPT}, *session.messages]
+
+    if user_input.strip():
+        messages[-1] = {
+            "role": "user",
+            "content": _build_user_message(user_input.strip(), instructions),
+        }
+    else:
+        messages.append({
+            "role": "user",
+            "content": _build_user_message("", instructions),
+        })
+
+    response = client.chat.completions.create(
+        model=_get_model(),
+        messages=messages,
+        temperature=TEMPERATURE,
+    )
+
+    reply = response.choices[0].message.content or ""
+    session.add_assistant_message(reply)
+    session.increment_turn()
+    return reply
+
+
+def generate_greeting(session: Session) -> str:
+    """Generate initial greeting without user input."""
+    from sie.flow import ConversationPhase
+
+    instructions = [get_phase_instruction(session)]
+
+    client = _get_client()
+    messages = [
+        {"role": "system", "content": SYSTEM_PROMPT},
+        {
+            "role": "user",
+            "content": _build_user_message("", instructions),
+        },
+    ]
+
+    response = client.chat.completions.create(
+        model=_get_model(),
+        messages=messages,
+        temperature=TEMPERATURE,
+    )
+
+    reply = response.choices[0].message.content or ""
+    session.add_assistant_message(reply)
+    session.greeted = True
+    session.phase = ConversationPhase.NAME_CONFIRM
+    session.increment_turn()
+    return reply
+
+
+def generate_closing(session: Session) -> str:
+    """Generate closing message when user exits."""
+    from sie.flow import ConversationPhase
+
+    session.phase = ConversationPhase.CLOSING
+    instructions = [get_phase_instruction(session)]
+
+    client = _get_client()
+    messages = [
+        {"role": "system", "content": SYSTEM_PROMPT},
+        *session.messages,
+        {
+            "role": "user",
+            "content": _build_user_message("（セッション終了）", instructions),
+        },
+    ]
+
+    response = client.chat.completions.create(
+        model=_get_model(),
+        messages=messages,
+        temperature=TEMPERATURE,
+    )
+
+    reply = response.choices[0].message.content or ""
+    session.add_assistant_message(reply)
+    session.increment_turn()
+    return reply
