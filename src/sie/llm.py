@@ -7,6 +7,7 @@ import os
 from dotenv import load_dotenv
 from openai import OpenAI
 
+from sie.enneagram.context import get_enneagram_instruction
 from sie.flow import advance_phase, get_name_response_hint, get_phase_instruction
 from sie.humor import get_humor_instruction
 from sie.personality import SYSTEM_PROMPT
@@ -53,6 +54,10 @@ def generate_reply(session: Session, user_input: str) -> str:
     if humor_instruction:
         instructions.append(humor_instruction)
 
+    enneagram_instruction = get_enneagram_instruction(session)
+    if enneagram_instruction:
+        instructions.append(enneagram_instruction)
+
     if user_input.strip():
         session.add_user_message(user_input.strip())
 
@@ -87,6 +92,9 @@ def generate_greeting(session: Session) -> str:
     from sie.flow import ConversationPhase
 
     instructions = [get_phase_instruction(session)]
+    enneagram_instruction = get_enneagram_instruction(session)
+    if enneagram_instruction:
+        instructions.append(enneagram_instruction)
 
     client = _get_client()
     messages = [
@@ -117,6 +125,9 @@ def generate_closing(session: Session) -> str:
 
     session.phase = ConversationPhase.CLOSING
     instructions = [get_phase_instruction(session)]
+    enneagram_instruction = get_enneagram_instruction(session)
+    if enneagram_instruction:
+        instructions.append(enneagram_instruction)
 
     client = _get_client()
     messages = [
