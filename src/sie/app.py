@@ -103,14 +103,58 @@ def main() -> None:
         <style>
         .stApp {
             background: linear-gradient(180deg, #0f1419 0%, #1a2332 100%);
+            color: #e8eef4;
+        }
+        .stApp p, .stApp span, .stApp label, .stApp li, .stApp div {
+            color: #e8eef4;
+        }
+        [data-testid="stSidebar"] {
+            background-color: #151d28;
+        }
+        [data-testid="stSidebar"] p,
+        [data-testid="stSidebar"] span,
+        [data-testid="stSidebar"] label,
+        [data-testid="stSidebar"] div {
+            color: #e8eef4;
         }
         [data-testid="stChatMessage"] {
-            background-color: rgba(255, 255, 255, 0.03);
+            background-color: rgba(255, 255, 255, 0.06);
             border-radius: 12px;
             padding: 0.5rem;
         }
-        h1 { color: #8eb8e8; font-weight: 300; }
-        .sie-caption { color: #7a8fa6; font-size: 0.9rem; }
+        [data-testid="stChatMessageContent"] p,
+        [data-testid="stChatMessageContent"] span,
+        [data-testid="stChatMessageContent"] li {
+            color: #f5f8fc;
+        }
+        [data-testid="stCaptionContainer"] p {
+            color: #a8bccf;
+        }
+        [data-testid="stBottom"],
+        [data-testid="stBottomBlockContainer"],
+        [data-testid="stBottom"] > div {
+            background-color: #0f1419;
+        }
+        [data-testid="stChatInput"] {
+            background-color: #ffffff;
+            border-color: #cccccc;
+            color: #000000;
+            caret-color: #000000;
+        }
+        [data-testid="stChatInput"] textarea {
+            color: #000000 !important;
+            background-color: #ffffff !important;
+            caret-color: #000000;
+        }
+        [data-testid="stChatInput"] textarea::placeholder {
+            color: rgba(0, 0, 0, 0.45) !important;
+        }
+        [data-testid="stChatInput"] button {
+            color: #000000;
+        }
+        h1 { color: #b8d4f0; font-weight: 300; }
+        h3 { color: #c8dff5; }
+        .sie-caption { color: #a8bccf; font-size: 0.9rem; }
         </style>
         """,
         unsafe_allow_html=True,
