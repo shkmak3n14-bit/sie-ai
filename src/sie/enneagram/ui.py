@@ -148,7 +148,7 @@ def _render_questions_by_category(
 
 def _render_step1() -> None:
     st.markdown("### 本能・感情・思考、どのセンターが最も強いか")
-    st.caption("12問 — 反応・注意・感情・行動の優先順位")
+    st.caption("15問 — 反応・注意・感情・行動の優先順位")
     st.session_state.center_answers = _render_questions_by_category(
         CENTER_QUESTIONS,
         st.session_state.center_answers,
@@ -160,7 +160,7 @@ def _render_step2() -> None:
     center = score_center(st.session_state.center_answers)
     questions = get_type_questions(center)
     st.markdown(f"### {CENTER_LABELS[center]}")
-    st.caption("7問 — 動機・恐れ・欲求・行動パターン")
+    st.caption("9問 — 動機・恐れ・欲求・行動パターン")
     st.session_state.type_answers = _render_questions_by_category(
         questions,
         st.session_state.type_answers,
@@ -170,7 +170,7 @@ def _render_step2() -> None:
 
 def _render_step3() -> None:
     st.markdown("### ウイング（隣接タイプの傾向）")
-    st.caption("5問 — 外向/内向・方向性・表現")
+    st.caption("6問 — 外向/内向・方向性・表現")
     st.session_state.wing_answers = _render_questions_by_category(
         WING_QUESTIONS,
         st.session_state.wing_answers,
@@ -180,7 +180,7 @@ def _render_step3() -> None:
 
 def _render_step4() -> None:
     st.markdown("### 本能サブタイプ（sp / so / sx）")
-    st.caption("10問 — 安全・役割・親密、どれを優先するか")
+    st.caption("12問 — 安全・役割・親密、どれを優先するか")
     st.session_state.instinct_answers = _render_questions_by_category(
         INSTINCT_QUESTIONS,
         st.session_state.instinct_answers,
@@ -404,7 +404,10 @@ def render_enneagram_assessment() -> None:
         return
 
     st.title("エニアグラム性格診断")
-    st.caption("4ステップ＋追加情報で、あなたの気性を読み解きます")
+    st.caption(
+        "18歳より前の経験（学校・家庭・友達）を思い出して答えてください。"
+        "社会人としての「正解」ではなく、当時の自然な反応を選んでください。"
+    )
 
     step = st.session_state.assessment_step
     st.progress(step / (TOTAL_STEPS + 1))

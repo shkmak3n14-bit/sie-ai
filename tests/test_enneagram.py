@@ -83,9 +83,9 @@ def test_center_scoring_body_heavy() -> None:
 
 
 def test_question_counts() -> None:
-    assert len(CENTER_QUESTIONS) == 12
-    assert len(get_type_questions(Center.BODY)) == 7
-    assert len(get_type_questions(Center.HEART)) == 7
-    assert len(get_type_questions(Center.HEAD)) == 7
-    assert len(WING_QUESTIONS) == 5
-    assert len(INSTINCT_QUESTIONS) == 10
+    assert len(CENTER_QUESTIONS) == 15
+    assert len(get_type_questions(Center.BODY)) == 9
+    assert len(get_type_questions(Center.HEART)) == 9
+    assert len(get_type_questions(Center.HEAD)) == 9
+    assert len(WING_QUESTIONS) == 6
+    assert len(INSTINCT_QUESTIONS) == 12
