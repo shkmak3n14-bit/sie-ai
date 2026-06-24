@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Literal, TypedDict
 
 
@@ -39,3 +39,4 @@ class EnneagramProfile:
 
     childhood_wound: str | None
     episode_samples: list[EpisodeSample]
+    reasoning: list[str] = field(default_factory=list)

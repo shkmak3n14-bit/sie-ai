@@ -9,7 +9,7 @@ from openai import OpenAI
 
 from sie.enneagram.context import get_enneagram_instruction
 from sie.episode import RelationshipEpisode, get_episode_analysis_instruction
-from sie.flow import advance_phase, get_name_response_hint, get_phase_instruction
+from sie.flow import advance_phase, get_name_response_hint, get_phase_instruction, GREETING_TEXT
 from sie.humor import get_humor_instruction
 from sie.personality import SYSTEM_PROMPT
 from sie.session import Session
@@ -135,27 +135,7 @@ def generate_greeting(session: Session) -> str:
     """Generate initial greeting without user input."""
     from sie.flow import ConversationPhase
 
-    instructions = [get_phase_instruction(session)]
-    enneagram_instruction = get_enneagram_instruction(session)
-    if enneagram_instruction:
-        instructions.append(enneagram_instruction)
-
-    client = _get_client()
-    messages = [
-        {"role": "system", "content": SYSTEM_PROMPT},
-        {
-            "role": "user",
-            "content": _build_user_message("", instructions),
-        },
-    ]
-
-    response = client.chat.completions.create(
-        model=_get_model(),
-        messages=messages,
-        temperature=TEMPERATURE,
-    )
-
-    reply = response.choices[0].message.content or ""
+    reply = GREETING_TEXT
     session.add_assistant_message(reply)
     session.greeted = True
     session.phase = ConversationPhase.NAME_CONFIRM

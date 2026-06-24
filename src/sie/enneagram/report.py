@@ -65,7 +65,12 @@ def format_report_plain(profile: EnneagramProfile) -> str:
     if profile.childhood_wound:
         lines.extend(["", "【幼少期の傷（傾向）】", profile.childhood_wound])
 
-    lines.extend(["", "【タイプ別スコア】", scores])
+    lines.extend(["", "【タイプ別スコア（参考）】", scores])
+
+    if profile.reasoning:
+        lines.extend(["", "【判定の根拠】"])
+        for item in profile.reasoning:
+            lines.append(f"  ・{item}")
 
     if profile.episode_samples:
         lines.extend(["", "【記録したエピソード】"])
@@ -112,6 +117,11 @@ def format_report_html(profile: EnneagramProfile) -> str:
         )
         episodes_html = f"<h3>記録したエピソード</h3><ul>{items}</ul>"
 
+    reasoning_html = ""
+    if profile.reasoning:
+        items = "".join(f"<li>{line}</li>" for line in profile.reasoning)
+        reasoning_html = f"<h3>判定の根拠</h3><ul>{items}</ul>"
+
     return f"""\
 <!DOCTYPE html>
 <html lang="ja">
@@ -139,7 +149,8 @@ def format_report_html(profile: EnneagramProfile) -> str:
   <p><strong>ストレス時の型:</strong> タイプ {profile.stress_pattern}</p>
   <p><strong>成長時の型:</strong> タイプ {profile.growth_pattern}</p>
   {wound_html}
-  <h3>タイプ別スコア</h3>
+  {reasoning_html}
+  <h3>タイプ別スコア（参考）</h3>
   <p>{scores_html}</p>
   {episodes_html}
   <hr>

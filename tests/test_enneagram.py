@@ -74,6 +74,8 @@ def test_run_assessment_returns_profile(minimal_input: AssessmentInput) -> None:
     assert profile.stress_pattern in range(1, 10)
     assert profile.growth_pattern in range(1, 10)
     assert len(profile.episode_samples) == 1
+    assert len(profile.reasoning) >= 5
+    assert any("ウイング" in line for line in profile.reasoning)
 
 
 def test_center_scoring_body_heavy() -> None:

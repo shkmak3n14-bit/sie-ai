@@ -13,17 +13,20 @@ from sie.enneagram.questions import (
     WING_QUESTIONS,
     get_type_questions,
 )
+from sie.enneagram.rationale import build_reasoning
 from sie.enneagram.scoring import (
     merge_type_scores,
     normalize_type_scores,
     refine_primary_type,
     score_behavior_log,
     score_center,
+    score_center_totals,
     score_episodes,
     score_instinct,
     score_self_other_gap,
     score_type_in_center,
-    score_wing,
+    score_type_totals_in_center,
+    score_wing_detail,
 )
 from sie.enneagram.types import (
     GROWTH_PATTERN,
@@ -76,7 +79,9 @@ def run_assessment(data: AssessmentInput) -> EnneagramProfile:
         raise ValueError("\n".join(errors))
 
     center = score_center(data.center_answers)
+    center_totals = score_center_totals(data.center_answers)
     question_primary = score_type_in_center(center, data.type_answers)
+    type_totals_in_center = score_type_totals_in_center(center, data.type_answers)
 
     supplemental_type: dict[int, float] = defaultdict(float)
     supplemental_instinct: dict[str, float] = defaultdict(float)
@@ -98,7 +103,9 @@ def run_assessment(data: AssessmentInput) -> EnneagramProfile:
 
     primary_type = refine_primary_type(center, question_primary, supplemental_type)
 
-    wing = score_wing(primary_type, data.wing_answers)
+    wing, wing_low, wing_high, wing_totals = score_wing_detail(
+        primary_type, data.wing_answers
+    )
 
     instinct_scores = defaultdict(float)
     for question in INSTINCT_QUESTIONS:
@@ -122,6 +129,22 @@ def run_assessment(data: AssessmentInput) -> EnneagramProfile:
     )
     normalized = normalize_type_scores(all_type_scores)
 
+    reasoning = build_reasoning(
+        center=center,
+        center_totals=center_totals,
+        question_primary=question_primary,
+        refined_primary=primary_type,
+        type_totals_in_center=type_totals_in_center,
+        supplemental_type=dict(supplemental_type),
+        wing=wing,
+        wing_low=wing_low,
+        wing_high=wing_high,
+        wing_totals=wing_totals,
+        instinct_variant=instinct_variant,
+        instinct_totals=dict(instinct_scores),
+        normalized_scores=normalized,
+    )
+
     return EnneagramProfile(
         primary_type=primary_type,
         wing=wing,
@@ -139,4 +162,5 @@ def run_assessment(data: AssessmentInput) -> EnneagramProfile:
         relationship_needs=list(type_info.relationship_needs),
         childhood_wound=type_info.childhood_wound,
         episode_samples=data.episode_samples,
+        reasoning=reasoning,
     )

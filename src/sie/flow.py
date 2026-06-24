@@ -49,6 +49,12 @@ DONE_KEYWORDS = (
     "ありがとう",
 )
 
+GREETING_TEXT = (
+    "私の名前はS.I.E(サイ)。\n"
+    "エニアグラムを使って、あなたが周りにいる人とうまくいくようにアドバイスできたらうれしいです。\n"
+    "何から始めましょうか？"
+)
+
 
 def is_casual_name_request(text: str) -> bool:
     normalized = text.strip().lower()
@@ -121,8 +127,8 @@ def get_phase_instruction(session: Session) -> str:
 
     if phase == ConversationPhase.GREETING:
         return (
-            "初期挨拶をしてください。"
-            "「もちろん。じゃあ、何から始める」のような落ち着いたトーンで。"
+            "初期挨拶をしてください。次の文面をそのまま使ってください。\n"
+            f"{GREETING_TEXT}"
         )
 
     if phase == ConversationPhase.NAME_CONFIRM:

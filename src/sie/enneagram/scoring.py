@@ -45,29 +45,45 @@ def _winner(scores: dict[str, float]) -> str:
 
 
 def score_center(answers: dict[str, int]) -> Center:
-    totals = _score_from_answers(CENTER_QUESTIONS, answers, ("body", "heart", "head"))
+    totals = score_center_totals(answers)
     winner = _winner(totals)
     return Center(winner)
 
 
-def score_type_in_center(center: Center, answers: dict[str, int]) -> int:
+def score_center_totals(answers: dict[str, int]) -> dict[str, float]:
+    return _score_from_answers(CENTER_QUESTIONS, answers, ("body", "heart", "head"))
+
+
+def score_type_totals_in_center(center: Center, answers: dict[str, int]) -> dict[int, float]:
     questions = CENTER_TYPE_QUESTIONS[center]
     type_keys = tuple(str(t) for t in CENTER_TYPES[center])
     totals = _score_from_answers(questions, answers, type_keys)
-    winner = _winner(totals)
-    return int(winner)
+    return {int(k): v for k, v in totals.items()}
+
+
+def score_type_in_center(center: Center, answers: dict[str, int]) -> int:
+    totals = score_type_totals_in_center(center, answers)
+    if not totals:
+        raise ValueError("スコアが空です。回答を確認してください。")
+    return max(totals, key=totals.get)
+
+
+def score_wing_detail(
+    primary_type: int,
+    answers: dict[str, int],
+) -> tuple[int, int, int, dict[str, float]]:
+    """Return (chosen_wing, wing_low, wing_high, wing_low/high totals)."""
+    wing_low, wing_high = wing_types(primary_type)
+    totals = _score_from_answers(WING_QUESTIONS, answers, ("wing_low", "wing_high"))
+    if not totals:
+        return wing_low, wing_low, wing_high, totals
+    wing = wing_low if totals.get("wing_low", 0) >= totals.get("wing_high", 0) else wing_high
+    return wing, wing_low, wing_high, totals
 
 
 def score_wing(primary_type: int, answers: dict[str, int]) -> int:
-    wing_low, wing_high = wing_types(primary_type)
-    totals = _score_from_answers(WING_QUESTIONS, answers, ("wing_low", "wing_high"))
-
-    if not totals:
-        return wing_low
-
-    if totals.get("wing_low", 0) >= totals.get("wing_high", 0):
-        return wing_low
-    return wing_high
+    wing, _, _, _ = score_wing_detail(primary_type, answers)
+    return wing
 
 
 def score_instinct(answers: dict[str, int]) -> InstinctualVariant:

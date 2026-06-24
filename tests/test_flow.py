@@ -117,7 +117,7 @@ def test_full_phase_sequence(session: Session) -> None:
 
 def test_phase_instructions_contain_key_phrases(session: Session) -> None:
     session.phase = ConversationPhase.GREETING
-    assert "何から始める" in get_phase_instruction(session)
+    assert "何から始めましょうか" in get_phase_instruction(session)
 
     session.phase = ConversationPhase.NAME_CONFIRM
     assert "お呼びすれば" in get_phase_instruction(session)

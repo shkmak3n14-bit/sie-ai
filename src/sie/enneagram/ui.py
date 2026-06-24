@@ -393,6 +393,12 @@ def _render_results() -> None:
         f"**本能サブタイプ:** {INSTINCT_LABELS.get(profile.instinctual_variant, profile.instinctual_variant)}"
     )
 
+    if profile.reasoning:
+        st.markdown("### 判定の根拠")
+        st.caption("なぜこのタイプ・ウイングになったか")
+        for line in profile.reasoning:
+            st.markdown(f"- {line}")
+
     st.markdown('<div class="enneagram-result">', unsafe_allow_html=True)
     st.markdown(f"**概要:** {profile.summary}")
     st.markdown("</div>", unsafe_allow_html=True)
@@ -427,7 +433,8 @@ def _render_results() -> None:
         st.markdown("**幼少期の傷（傾向）**")
         st.markdown(profile.childhood_wound)
 
-    st.markdown("**タイプ別スコア**")
+    st.markdown("**タイプ別スコア（参考）**")
+    st.caption("補足データを含めた参考値です。ウイング判定とは別の指標です。")
     score_text = " · ".join(
         f"{t}: {profile.scores.get(t, 0):.0%}" for t in range(1, 10)
     )
