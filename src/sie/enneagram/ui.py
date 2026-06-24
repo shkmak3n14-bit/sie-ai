@@ -108,10 +108,69 @@ def reset_assessment() -> None:
         "episode_samples",
         "enneagram_profile",
         "assessment_editing",
+        "enneagram_saved",
     ):
         st.session_state.pop(key, None)
     _init_assessment_state()
     st.session_state.assessment_editing = True
+
+
+def save_profile_and_talk() -> None:
+    """Keep diagnosis result and switch to S.I.E. conversation."""
+    profile = st.session_state.enneagram_profile
+    st.session_state.enneagram_saved = True
+    if "sie_session" in st.session_state:
+        st.session_state.sie_session.enneagram = profile
+    st.session_state.app_mode = "会話"
+    st.rerun()
+
+
+def redo_assessment() -> None:
+    """Restart the questionnaire from step 1."""
+    reset_assessment()
+    st.session_state.app_mode = "エニアグラム診断"
+    st.rerun()
+
+
+def request_full_initialize() -> None:
+    """Reset diagnosis and S.I.E. session to the initial state."""
+    reset_assessment()
+    st.session_state.full_initialize_requested = True
+    st.rerun()
+
+
+def _render_result_actions() -> None:
+    st.divider()
+    st.markdown("### 次にすること")
+    col1, col2, col3 = st.columns(3)
+
+    with col1:
+        st.caption("結果を保持したまま会話へ")
+        if st.button(
+            "① サイと会話する",
+            use_container_width=True,
+            type="primary",
+            key="action_talk_with_sie",
+        ):
+            save_profile_and_talk()
+
+    with col2:
+        st.caption("回答を消して最初から")
+        if st.button(
+            "② 診断をやり直す",
+            use_container_width=True,
+            key="action_redo_assessment",
+        ):
+            redo_assessment()
+
+    with col3:
+        st.caption("診断・会話をすべてリセット")
+        if st.button(
+            "③ 初期化",
+            use_container_width=True,
+            key="action_full_initialize",
+        ):
+            request_full_initialize()
 
 
 def _questions_complete(questions: tuple[Question, ...], answers: dict[str, int]) -> bool:
@@ -379,6 +438,8 @@ def _render_results() -> None:
         for sample in profile.episode_samples:
             st.markdown(f"- {sample['event']}")
 
+    _render_result_actions()
+
     st.divider()
     st.markdown("### 結果をメールで受け取る")
     st.caption("入力したアドレスに、診断結果の全文を送信します。")
@@ -402,15 +463,6 @@ def _render_results() -> None:
             except Exception as exc:
                 st.error(f"送信に失敗しました: {exc}")
 
-    st.divider()
-    if st.button("サイと話す", use_container_width=True, type="primary"):
-        st.session_state.app_mode = "会話"
-        if "sie_session" in st.session_state:
-            st.session_state.sie_session.enneagram = profile
-        st.rerun()
-
-    st.caption("診断結果は会話の核心フェーズ以降で、サイが静かに加味します。")
-
 
 def render_enneagram_assessment() -> None:
     """Render the full multi-step Enneagram assessment UI."""
@@ -421,10 +473,6 @@ def render_enneagram_assessment() -> None:
     ):
         st.title("エニアグラム性格診断")
         _render_results()
-        if st.button("もう一度診断する", use_container_width=True):
-            reset_assessment()
-            st.session_state.assessment_editing = True
-            st.rerun()
         return
 
     st.title("エニアグラム性格診断")

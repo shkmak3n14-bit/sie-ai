@@ -8,6 +8,7 @@ from dotenv import load_dotenv
 from openai import OpenAI
 
 from sie.enneagram.context import get_enneagram_instruction
+from sie.episode import RelationshipEpisode, get_episode_analysis_instruction
 from sie.flow import advance_phase, get_name_response_hint, get_phase_instruction
 from sie.humor import get_humor_instruction
 from sie.personality import SYSTEM_PROMPT
@@ -84,6 +85,49 @@ def generate_reply(session: Session, user_input: str) -> str:
     reply = response.choices[0].message.content or ""
     session.add_assistant_message(reply)
     session.increment_turn()
+    return reply
+
+
+def generate_episode_analysis(
+    session: Session,
+    episode: RelationshipEpisode,
+    user_message: str,
+) -> str:
+    """Generate S.I.E. analysis for a shared relationship episode."""
+    from sie.flow import ConversationPhase
+
+    if session.phase == ConversationPhase.NAME_CONFIRM:
+        session.phase = ConversationPhase.EMPATHY
+
+    instructions: list[str] = [
+        get_episode_analysis_instruction(episode),
+        "通常の会話フローより、エピソード分析を優先してください。",
+    ]
+
+    enneagram_instruction = get_enneagram_instruction(session)
+    if enneagram_instruction:
+        instructions.append(enneagram_instruction)
+
+    session.add_user_message(user_message)
+
+    client = _get_client()
+    messages = [{"role": "system", "content": SYSTEM_PROMPT}, *session.messages[:-1]]
+    messages.append({
+        "role": "user",
+        "content": _build_user_message(user_message, instructions),
+    })
+
+    response = client.chat.completions.create(
+        model=_get_model(),
+        messages=messages,
+        temperature=TEMPERATURE,
+    )
+
+    reply = response.choices[0].message.content or ""
+    session.add_assistant_message(reply)
+    session.increment_turn()
+    if session.phase == ConversationPhase.EMPATHY:
+        session.phase = ConversationPhase.ONGOING
     return reply
 
 
