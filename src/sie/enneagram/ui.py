@@ -379,6 +379,30 @@ def _render_results() -> None:
         for sample in profile.episode_samples:
             st.markdown(f"- {sample['event']}")
 
+    st.divider()
+    st.markdown("### 結果をメールで受け取る")
+    st.caption("入力したアドレスに、診断結果の全文を送信します。")
+    email_address = st.text_input(
+        "メールアドレス",
+        placeholder="example@gmail.com",
+        key="enneagram_result_email",
+    )
+    if st.button("診断結果をメール送信", use_container_width=True):
+        if not email_address.strip():
+            st.error("メールアドレスを入力してください。")
+        else:
+            from sie.email import send_enneagram_result_email
+
+            try:
+                with st.spinner("送信中…"):
+                    send_enneagram_result_email(email_address, profile)
+                st.success(f"{email_address.strip()} に送信しました。")
+            except ValueError as exc:
+                st.error(str(exc))
+            except Exception as exc:
+                st.error(f"送信に失敗しました: {exc}")
+
+    st.divider()
     if st.button("サイと話す", use_container_width=True, type="primary"):
         st.session_state.app_mode = "会話"
         if "sie_session" in st.session_state:

@@ -20,11 +20,15 @@ dev = [
 ]
 web = [
     "streamlit>=1.30.0",
+    "google-api-python-client>=2.100.0",
+    "google-auth-httplib2>=0.2.0",
+    "google-auth-oauthlib>=1.2.0",
 ]
 
 [project.scripts]
 sie = "sie.cli:main"
 sie-web = "sie.app:run"
+sie-gmail-auth = "sie.email.auth_setup:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

@@ -7,3 +7,6 @@ build/
 .pytest_cache/
 .env
 *.log
+credentials.json
+token.json
+gmail_token.json
