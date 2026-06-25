@@ -41,9 +41,21 @@ class EnneagramProfile:
     episode_samples: list[EpisodeSample]
     reasoning: list[str] = field(default_factory=list)
 
+    center_confidence: float = 0.0
+    center_shares: dict[str, float] = field(default_factory=dict)
+    center_low_confidence: bool = False
+
     type_confidence: float = 0.0
     type_question_confidence: float = 0.0
+    type_shares_in_center: dict[int, float] = field(default_factory=dict)
+    type_share_order: tuple[int, ...] = ()
     type_low_confidence: bool = False
+
+    wing_confidence: float = 0.0
+    wing_shares: dict[int, float] = field(default_factory=dict)
+    wing_share_order: tuple[int, ...] = ()
+    wing_low_confidence: bool = False
+
     center_changed_for_type: bool = False
     type_reconfirmed: bool = False
     type_supplemental_only: bool = False

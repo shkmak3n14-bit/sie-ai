@@ -5,6 +5,7 @@ from __future__ import annotations
 import streamlit as st
 
 from sie.enneagram.assess import run_assessment
+from sie.enneagram.confidence import format_confidence_lines, low_confidence_messages
 from sie.enneagram.inputs import AssessmentInput, BehaviorLog, EpisodeInput, SelfOtherGap
 from sie.enneagram.profile import EpisodeSample
 from sie.enneagram.questions import (
@@ -627,18 +628,12 @@ def _render_results() -> None:
     st.markdown(
         f"**本能サブタイプ:** {INSTINCT_LABELS.get(profile.instinctual_variant, profile.instinctual_variant)}"
     )
-    if profile.type_confidence > 0:
-        st.markdown(f"**タイプ判定信頼度:** {profile.type_confidence:.0%}")
-    if profile.type_low_confidence:
-        st.warning(
-            "タイプ判定の信頼度がやや低めです。"
-            "結果がしっくりこない場合は、時間を置いて再診断することをおすすめします。"
-        )
-    if profile.type_supplemental_only:
-        st.warning(
-            "センター判定が変更されたため、タイプは補足データ中心の参考値です。"
-            "次回は Step 2c のタイプ再確認まで完了すると精度が上がります。"
-        )
+
+    st.markdown("### 判定信頼度")
+    for line in format_confidence_lines(profile):
+        st.markdown(f"- {line}")
+    for message in low_confidence_messages(profile):
+        st.warning(message)
 
     if profile.reasoning:
         st.markdown("### 判定の根拠")

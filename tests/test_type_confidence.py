@@ -4,6 +4,7 @@ import pytest
 
 pytest_plugins = ["tests.test_enneagram"]
 
+from sie.enneagram.confidence import format_confidence_lines
 from sie.enneagram.inputs import AssessmentInput
 from sie.enneagram.questions import get_type_questions
 from sie.enneagram.scoring import (

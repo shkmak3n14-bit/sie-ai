@@ -13,10 +13,13 @@ from sie.enneagram.questions import (
 )
 from sie.enneagram.wing_questions import get_wing_questions
 from sie.enneagram.rationale import build_reasoning
+from sie.enneagram.confidence import (
+    LOW_CONFIDENCE_THRESHOLD,
+    normalize_shares,
+    wing_confidence_detail,
+)
 from sie.enneagram.scoring import (
-    TYPE_LOW_CONFIDENCE_THRESHOLD,
     analyze_center_base,
-    analyze_center_final,
     analyze_type_base,
     gather_supplemental_type,
     merge_type_scores,
@@ -30,6 +33,7 @@ from sie.enneagram.scoring import (
     score_wing_detail,
 )
 from sie.enneagram.types import (
+    CENTER_TYPES,
     GROWTH_PATTERN,
     STRESS_PATTERN,
     Center,
@@ -211,7 +215,7 @@ def run_assessment(data: AssessmentInput) -> EnneagramProfile:
     type_adjusted_by_supplemental = type_result.adjusted
     type_borderline = type_result.borderline
     type_low_confidence = (
-        type_confidence < TYPE_LOW_CONFIDENCE_THRESHOLD
+        type_confidence < LOW_CONFIDENCE_THRESHOLD
         or type_supplemental_only
         or (
             type_borderline
@@ -222,6 +226,19 @@ def run_assessment(data: AssessmentInput) -> EnneagramProfile:
 
     wing, wing_low, wing_high, wing_totals = score_wing_detail(
         primary_type, data.wing_answers
+    )
+    wing_confidence, wing_shares = wing_confidence_detail(
+        wing_low, wing_high, wing_totals
+    )
+    wing_low_confidence = bool(
+        wing is not None and wing_confidence < LOW_CONFIDENCE_THRESHOLD
+    )
+
+    center_shares = normalize_shares(center_totals)
+    center_low_confidence = center_confidence < LOW_CONFIDENCE_THRESHOLD
+    type_share_order = CENTER_TYPES[center]
+    type_shares_in_center = normalize_shares(
+        {t: type_totals_in_center.get(t, 0.0) for t in type_share_order}
     )
 
     instinct_scores = defaultdict(float)
@@ -301,9 +318,18 @@ def run_assessment(data: AssessmentInput) -> EnneagramProfile:
         childhood_wound=type_info.childhood_wound,
         episode_samples=data.episode_samples,
         reasoning=reasoning,
+        center_confidence=center_confidence,
+        center_shares=center_shares,
+        center_low_confidence=center_low_confidence,
         type_confidence=type_confidence,
         type_question_confidence=type_question_confidence,
+        type_shares_in_center=type_shares_in_center,
+        type_share_order=type_share_order,
         type_low_confidence=type_low_confidence,
+        wing_confidence=wing_confidence,
+        wing_shares=wing_shares,
+        wing_share_order=(wing_low, wing_high),
+        wing_low_confidence=wing_low_confidence,
         center_changed_for_type=center_changed_for_type,
         type_reconfirmed=type_reconfirmed,
         type_supplemental_only=type_supplemental_only,

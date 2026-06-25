@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from sie.enneagram.confidence import format_confidence_lines, low_confidence_messages
 from sie.enneagram.profile import EnneagramProfile
 from sie.enneagram.types import get_type_info
 
@@ -21,10 +22,11 @@ def format_report_plain(profile: EnneagramProfile) -> str:
     type_info = get_type_info(profile.primary_type)
     instinct = INSTINCT_LABELS.get(profile.instinctual_variant, profile.instinctual_variant)
     wing_line = f"ウイング: タイプ {profile.wing}\n" if profile.wing else ""
-    confidence_line = (
-        f"タイプ判定信頼度: {profile.type_confidence:.0%}\n"
-        if profile.type_confidence > 0
-        else ""
+    confidence_lines = format_confidence_lines(profile)
+    confidence_block = "\n".join(confidence_lines) + "\n" if confidence_lines else ""
+    warning_lines = low_confidence_messages(profile)
+    warning_block = (
+        "\n".join(f"※ {msg}" for msg in warning_lines) + "\n" if warning_lines else ""
     )
 
     scores = " / ".join(
@@ -37,7 +39,8 @@ def format_report_plain(profile: EnneagramProfile) -> str:
         "",
         type_info.name,
         wing_line.rstrip(),
-        confidence_line.rstrip(),
+        confidence_block.rstrip(),
+        warning_block.rstrip(),
         f"本能サブタイプ: {instinct}",
         "",
         "【概要】",
@@ -105,6 +108,15 @@ def format_report_html(profile: EnneagramProfile) -> str:
         return "".join(f"<li>{item}</li>" for item in items)
 
     wing_html = f"<p><strong>ウイング:</strong> タイプ {profile.wing}</p>" if profile.wing else ""
+    confidence_html = "".join(f"<li>{line}</li>" for line in format_confidence_lines(profile))
+    confidence_section = (
+        f"<h3>判定信頼度</h3><ul>{confidence_html}</ul>" if confidence_html else ""
+    )
+    warnings = low_confidence_messages(profile)
+    warning_html = "".join(f"<li>{msg}</li>" for msg in warnings)
+    warning_section = (
+        f"<h3>参考</h3><ul>{warning_html}</ul>" if warning_html else ""
+    )
     wound_html = (
         f"<h3>幼少期の傷（傾向）</h3><p>{profile.childhood_wound}</p>"
         if profile.childhood_wound
@@ -136,6 +148,8 @@ def format_report_html(profile: EnneagramProfile) -> str:
   <h2>{type_info.name}</h2>
   {wing_html}
   <p><strong>本能サブタイプ:</strong> {instinct}</p>
+  {confidence_section}
+  {warning_section}
   <h3>概要</h3>
   <p>{profile.summary}</p>
   <h3>強み</h3>
