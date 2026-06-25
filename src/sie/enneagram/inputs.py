@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 from sie.enneagram.profile import EpisodeSample
+from sie.enneagram.types import Center
 
 
 @dataclass
@@ -38,6 +39,8 @@ class AssessmentInput:
     """All answers and supplementary data for a full assessment."""
 
     center_answers: dict[str, int] = field(default_factory=dict)
+    center_tiebreak_answers: dict[str, int] = field(default_factory=dict)
+    center_tiebreak_pair: tuple[Center, Center] | None = None
     type_answers: dict[str, int] = field(default_factory=dict)
     wing_answers: dict[str, int] = field(default_factory=dict)
     instinct_answers: dict[str, int] = field(default_factory=dict)

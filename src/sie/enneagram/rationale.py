@@ -23,6 +23,9 @@ def build_reasoning(
     *,
     center: Center,
     center_totals: dict[str, float],
+    center_confidence: float,
+    center_tiebreak_used: bool,
+    center_tiebreak_pair: tuple[Center, Center] | None,
     question_primary: int,
     refined_primary: int,
     type_totals_in_center: dict[int, float],
@@ -39,13 +42,30 @@ def build_reasoning(
     lines: list[str] = []
 
     center_total = sum(center_totals.values()) or 1.0
+    conf_pct = f"{center_confidence:.0%}"
     lines.append(
         f"【Step 1 センター】{CENTER_LABELS[center]} が最も高く、"
         f"本能 {center_totals.get('body', 0):.0f} / "
         f"感情 {center_totals.get('heart', 0):.0f} / "
         f"思考 {center_totals.get('head', 0):.0f} "
-        f"（{_pct(center_totals.get(center.value, 0), center_total)}）でした。"
+        f"（判定信頼度 {conf_pct}）でした。"
     )
+    if center_tiebreak_used and center_tiebreak_pair:
+        a, b = center_tiebreak_pair
+        labels = {
+            Center.BODY: "本能",
+            Center.HEART: "感情",
+            Center.HEAD: "思考",
+        }
+        lines.append(
+            f"【Step 1b センター追加判定】"
+            f"{labels[a]}と{labels[b]}が接戦だったため、追加5問で判別しました。"
+        )
+    elif center_confidence < 0.55:
+        lines.append(
+            "【センター判定】得点差が小さく、センター判定の信頼度はやや低めです。"
+            "結果がしっくりこない場合は、時間を置いて再診断することをおすすめします。"
+        )
 
     type_in_center_total = sum(type_totals_in_center.values()) or 1.0
     type_parts = " · ".join(

@@ -8,6 +8,9 @@ def test_rationale_explains_wing_vs_type_score() -> None:
     reasoning = build_reasoning(
         center=Center.BODY,
         center_totals={"body": 20.0, "heart": 5.0, "head": 3.0},
+        center_confidence=0.71,
+        center_tiebreak_used=False,
+        center_tiebreak_pair=None,
         question_primary=8,
         refined_primary=8,
         type_totals_in_center={8: 12.0, 9: 4.0, 1: 2.0},

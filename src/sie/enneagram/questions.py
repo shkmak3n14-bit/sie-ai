@@ -68,9 +68,9 @@ CENTER_QUESTIONS: tuple[Question, ...] = (
         text="明日、レポートの提出期限です。今日の夕方、友達から「今から遊ぼう」と誘われました。",
         category="action_priority",
         options=_opts(
-            ("遊ばず、今夜中にレポートを終わらせる", {"body": 2.0}),
-            ("友達に事情を説明し、短時間だけ会う", {"heart": 2.0}),
-            ("優先順位を考え、半分ずつなど工夫する", {"head": 2.0}),
+            ("「約束したから」と感じ、遊びに行かない", {"body": 2.0}),
+            ("友達をがっかりさせたくなくて、迷いながら断る", {"heart": 2.0}),
+            ("レポートに何時間かかるか計算し、短時間だけ会うか決める", {"head": 2.0}),
         ),
     ),
     Question(
@@ -79,7 +79,7 @@ CENTER_QUESTIONS: tuple[Question, ...] = (
         category="reaction",
         options=_opts(
             ("はっきり自分の意見を言う", {"body": 2.0}),
-            ("場を和ませようと話題を変える", {"heart": 1.0, "body": 1.0}),
+            ("みんなの気持ちが傷つかないよう、言い方や話題を調整する", {"heart": 2.0}),
             ("一旦黙って、どちらが正しいか考える", {"head": 2.0}),
         ),
     ),
@@ -145,12 +145,12 @@ CENTER_QUESTIONS: tuple[Question, ...] = (
     ),
     Question(
         id="c12",
-        text="高校卒業後の自分を想像するとき、いちばん大事にしたいのは？",
+        text="高校卒業後の自分を想像するとき、いちばん避けたい状態に近いのは？",
         category="action_priority",
         options=_opts(
-            ("誠実に生きる・約束を守る", {"body": 2.0}),
-            ("大切な人との関係・好かれている実感", {"heart": 2.0}),
-            ("不安が少なく、選択肢がある未来", {"head": 2.0}),
+            ("自分の軸がブレて、境界を守れないこと", {"body": 2.0}),
+            ("大切な人から必要とされず、愛されていないと感じること", {"heart": 2.0}),
+            ("先が見えず、心配事が整理できないこと", {"head": 2.0}),
         ),
     ),
     Question(
@@ -168,9 +168,9 @@ CENTER_QUESTIONS: tuple[Question, ...] = (
         text="SNSで、同級生の受賞や合格報告を見ました。最初の気持ちに近いのは？",
         category="emotion",
         options=_opts(
-            ("「自分ももっと頑張らないと」", {"body": 1.0, "heart": 1.0}),
+            ("「悔しい」「なんで自分だけ…」と腹が立つ、または焦る", {"body": 2.0}),
             ("「すごいな、自分と比べてしまう」", {"heart": 2.0}),
-            ("「本当かな、どれくらい努力したんだろう」", {"head": 2.0}),
+            ("「どうやったんだろう、どれくらい努力したんだろう」", {"head": 2.0}),
         ),
     ),
     Question(
@@ -639,9 +639,16 @@ def get_type_questions(center: Center) -> tuple[Question, ...]:
     return CENTER_TYPE_QUESTIONS[center]
 
 
+def get_center_questions() -> tuple[Question, ...]:
+    """Return all Step 1 center questions (base 15 + core-emotion 8)."""
+    from sie.enneagram.center_core_questions import CENTER_CORE_QUESTIONS
+
+    return CENTER_QUESTIONS + CENTER_CORE_QUESTIONS
+
+
 def get_all_questions() -> dict[str, tuple[Question, ...]]:
     return {
-        "center": CENTER_QUESTIONS,
+        "center": get_center_questions(),
         "type_body": BODY_TYPE_QUESTIONS,
         "type_heart": HEART_TYPE_QUESTIONS,
         "type_head": HEAD_TYPE_QUESTIONS,

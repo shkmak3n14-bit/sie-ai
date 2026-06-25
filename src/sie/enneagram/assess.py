@@ -7,19 +7,20 @@ from collections import defaultdict
 from sie.enneagram.inputs import AssessmentInput
 from sie.enneagram.profile import EnneagramProfile
 from sie.enneagram.questions import (
-    CENTER_QUESTIONS,
     INSTINCT_QUESTIONS,
+    get_center_questions,
     get_type_questions,
 )
 from sie.enneagram.wing_questions import get_wing_questions
 from sie.enneagram.rationale import build_reasoning
 from sie.enneagram.scoring import (
+    analyze_center_base,
+    analyze_center_final,
     merge_type_scores,
     normalize_type_scores,
     refine_primary_type,
     score_behavior_log,
     score_center,
-    score_center_totals,
     score_episodes,
     score_instinct,
     score_self_other_gap,
@@ -49,17 +50,40 @@ def _validate_answers(
 def validate_input(data: AssessmentInput) -> list[str]:
     """Return validation errors for an assessment input."""
     errors: list[str] = []
-    errors.extend(_validate_answers(CENTER_QUESTIONS, data.center_answers, "センター判定"))
+    errors.extend(_validate_answers(get_center_questions(), data.center_answers, "センター判定"))
 
     try:
-        center = score_center(data.center_answers)
+        base = analyze_center_base(data.center_answers)
+        if base.borderline:
+            if data.center_tiebreak_pair is None:
+                errors.append("センター追加判定: 接戦のため追加質問への回答が必要です")
+            else:
+                from sie.enneagram.center_tiebreak_questions import get_center_tiebreak_questions
+
+                tb_questions = get_center_tiebreak_questions(data.center_tiebreak_pair)
+                errors.extend(
+                    _validate_answers(tb_questions, data.center_tiebreak_answers, "センター追加判定")
+                )
+    except ValueError:
+        pass
+
+    try:
+        center = score_center(
+            data.center_answers,
+            data.center_tiebreak_answers or None,
+            data.center_tiebreak_pair,
+        )
         type_questions = get_type_questions(center)
         errors.extend(_validate_answers(type_questions, data.type_answers, "タイプ判定"))
     except ValueError:
         pass
 
     try:
-        center = score_center(data.center_answers)
+        center = score_center(
+            data.center_answers,
+            data.center_tiebreak_answers or None,
+            data.center_tiebreak_pair,
+        )
         question_primary = score_type_in_center(center, data.type_answers)
         wing_questions = get_wing_questions(question_primary)
         errors.extend(_validate_answers(wing_questions, data.wing_answers, "ウイング判定"))
@@ -83,8 +107,19 @@ def run_assessment(data: AssessmentInput) -> EnneagramProfile:
     if errors:
         raise ValueError("\n".join(errors))
 
-    center = score_center(data.center_answers)
-    center_totals = score_center_totals(data.center_answers)
+    center = score_center(
+        data.center_answers,
+        data.center_tiebreak_answers or None,
+        data.center_tiebreak_pair,
+    )
+    center_analysis = analyze_center_final(
+        data.center_answers,
+        data.center_tiebreak_answers or None,
+        data.center_tiebreak_pair,
+    )
+    center_totals = center_analysis.totals
+    center_confidence = center_analysis.confidence
+    tiebreak_used = bool(data.center_tiebreak_pair and data.center_tiebreak_answers)
     question_primary = score_type_in_center(center, data.type_answers)
     type_totals_in_center = score_type_totals_in_center(center, data.type_answers)
 
@@ -137,6 +172,9 @@ def run_assessment(data: AssessmentInput) -> EnneagramProfile:
     reasoning = build_reasoning(
         center=center,
         center_totals=center_totals,
+        center_confidence=center_confidence,
+        center_tiebreak_used=tiebreak_used,
+        center_tiebreak_pair=data.center_tiebreak_pair,
         question_primary=question_primary,
         refined_primary=primary_type,
         type_totals_in_center=type_totals_in_center,

@@ -8,26 +8,28 @@ from sie.enneagram.assess import run_assessment
 from sie.enneagram.inputs import AssessmentInput, BehaviorLog, EpisodeInput, SelfOtherGap
 from sie.enneagram.profile import EpisodeSample
 from sie.enneagram.questions import (
-    CENTER_QUESTIONS,
     INSTINCT_QUESTIONS,
     RELATIONSHIP_OPTIONS,
     STRESS_REACTION_OPTIONS,
     WORK_ROLE_OPTIONS,
     Question,
+    get_center_questions,
     get_type_questions,
 )
-from sie.enneagram.scoring import score_center, score_type_in_center
+from sie.enneagram.scoring import analyze_center_base, score_center, score_type_in_center
 from sie.enneagram.types import Center, get_type_info, wing_types
 from sie.enneagram.wing_questions import get_wing_questions
+from sie.enneagram.center_tiebreak_questions import get_center_tiebreak_questions
 
-TOTAL_STEPS = 5
+TOTAL_STEPS = 6
 
 STEP_TITLES = {
     1: "Step 1 — センター判定",
-    2: "Step 2 — タイプ判定",
-    3: "Step 3 — ウイング判定",
-    4: "Step 4 — 本能サブタイプ",
-    5: "追加情報（精度向上）",
+    2: "Step 1b — センター追加判定",
+    3: "Step 2 — タイプ判定",
+    4: "Step 3 — ウイング判定",
+    5: "Step 4 — 本能サブタイプ",
+    6: "追加情報（精度向上）",
 }
 
 CATEGORY_LABELS = {
@@ -51,6 +53,8 @@ CATEGORY_LABELS = {
     "expression": "表現の仕方",
     "relationship": "関係性",
     "decision": "選択・判断",
+    "core_emotion": "コア感情（本能・感情・思考）",
+    "center_tiebreak": "センター追加判別",
 }
 
 CENTER_LABELS = {
@@ -77,6 +81,8 @@ def _init_assessment_state() -> None:
     defaults = {
         "assessment_step": 1,
         "center_answers": {},
+        "center_tiebreak_answers": {},
+        "center_tiebreak_pair": None,
         "type_answers": {},
         "wing_answers": {},
         "instinct_answers": {},
@@ -100,6 +106,8 @@ def reset_assessment() -> None:
     for key in (
         "assessment_step",
         "center_answers",
+        "center_tiebreak_answers",
+        "center_tiebreak_pair",
         "type_answers",
         "wing_answers",
         "instinct_answers",
@@ -211,18 +219,54 @@ def _render_questions_by_category(
     return answers
 
 
+def _resolved_center() -> Center:
+    return score_center(
+        st.session_state.center_answers,
+        st.session_state.center_tiebreak_answers or None,
+        st.session_state.center_tiebreak_pair,
+    )
+
+
 def _render_step1() -> None:
+    questions = get_center_questions()
     st.markdown("### 本能・感情・思考、どのセンターが最も強いか")
-    st.caption("15問 — 反応・注意・感情・行動の優先順位")
+    st.caption("23問 — 日常の反応（15問）＋ コア感情の判別（8問）")
     st.session_state.center_answers = _render_questions_by_category(
-        CENTER_QUESTIONS,
+        questions,
         st.session_state.center_answers,
         "center",
     )
 
 
-def _render_step2() -> None:
-    center = score_center(st.session_state.center_answers)
+def _render_step2_center_tiebreak() -> None:
+    pair = st.session_state.center_tiebreak_pair
+    if not pair:
+        st.warning("追加判定は不要です。前のステップに戻ってください。")
+        return
+
+    base = analyze_center_base(st.session_state.center_answers)
+    total = sum(base.totals.values()) or 1.0
+    labels = {"body": "本能", "heart": "感情", "head": "思考"}
+    parts = " / ".join(
+        f"{labels[k]} {base.totals.get(k, 0) / total:.0%}"
+        for k in ("body", "heart", "head")
+    )
+    a, b = pair
+    st.markdown("### センター判定が接戦のため、追加の5問にお答えください")
+    st.caption(
+        f"Step 1 の結果: {parts}（1位と2位の差が小さいため）"
+        f" — {labels[a.value]} vs {labels[b.value]} を判別します"
+    )
+    questions = get_center_tiebreak_questions(pair)
+    st.session_state.center_tiebreak_answers = _render_questions_by_category(
+        questions,
+        st.session_state.center_tiebreak_answers,
+        "center_tb",
+    )
+
+
+def _render_step3_type() -> None:
+    center = _resolved_center()
     questions = get_type_questions(center)
     st.markdown(f"### {CENTER_LABELS[center]}")
     st.caption("9問 — 動機・恐れ・欲求・行動パターン")
@@ -233,8 +277,8 @@ def _render_step2() -> None:
     )
 
 
-def _render_step3() -> None:
-    center = score_center(st.session_state.center_answers)
+def _render_step4_wing() -> None:
+    center = _resolved_center()
     question_primary = score_type_in_center(center, st.session_state.type_answers)
     wing_low, wing_high = wing_types(question_primary)
     questions = get_wing_questions(question_primary)
@@ -250,7 +294,7 @@ def _render_step3() -> None:
     )
 
 
-def _render_step4() -> None:
+def _render_step5_instinct() -> None:
     st.markdown("### 本能サブタイプ（sp / so / sx）")
     st.caption("12問 — 安全・役割・親密、どれを優先するか")
     st.session_state.instinct_answers = _render_questions_by_category(
@@ -260,7 +304,7 @@ def _render_step4() -> None:
     )
 
 
-def _render_step5() -> None:
+def _render_step6_supplemental() -> None:
     st.markdown("### 追加情報")
     st.caption("任意ですが、入力すると診断精度が上がります。")
 
@@ -355,6 +399,8 @@ def _render_step5() -> None:
 def _build_assessment_input() -> AssessmentInput:
     return AssessmentInput(
         center_answers=st.session_state.center_answers,
+        center_tiebreak_answers=st.session_state.center_tiebreak_answers,
+        center_tiebreak_pair=st.session_state.center_tiebreak_pair,
         type_answers=st.session_state.type_answers,
         wing_answers=st.session_state.wing_answers,
         instinct_answers=st.session_state.instinct_answers,
@@ -378,20 +424,27 @@ def _build_assessment_input() -> AssessmentInput:
 
 def _validate_current_step(step: int) -> list[str]:
     if step == 1:
-        if not _questions_complete(CENTER_QUESTIONS, st.session_state.center_answers):
+        if not _questions_complete(get_center_questions(), st.session_state.center_answers):
             return ["すべてのセンター判定の質問に回答してください。"]
     elif step == 2:
-        center = score_center(st.session_state.center_answers)
+        pair = st.session_state.center_tiebreak_pair
+        if not pair:
+            return ["センター追加判定は不要です。"]
+        questions = get_center_tiebreak_questions(pair)
+        if not _questions_complete(questions, st.session_state.center_tiebreak_answers):
+            return ["すべてのセンター追加判定の質問に回答してください。"]
+    elif step == 3:
+        center = _resolved_center()
         questions = get_type_questions(center)
         if not _questions_complete(questions, st.session_state.type_answers):
             return ["すべてのタイプ判定の質問に回答してください。"]
-    elif step == 3:
-        center = score_center(st.session_state.center_answers)
+    elif step == 4:
+        center = _resolved_center()
         question_primary = score_type_in_center(center, st.session_state.type_answers)
         questions = get_wing_questions(question_primary)
         if not _questions_complete(questions, st.session_state.wing_answers):
             return ["すべてのウイング判定の質問に回答してください。"]
-    elif step == 4:
+    elif step == 5:
         if not _questions_complete(INSTINCT_QUESTIONS, st.session_state.instinct_answers):
             return ["すべての本能判定の質問に回答してください。"]
     return []
@@ -511,20 +564,27 @@ def render_enneagram_assessment() -> None:
     if step == 1:
         _render_step1()
     elif step == 2:
-        _render_step2()
+        _render_step2_center_tiebreak()
     elif step == 3:
-        _render_step3()
+        _render_step3_type()
     elif step == 4:
-        _render_step4()
+        _render_step4_wing()
     elif step == 5:
-        _render_step5()
+        _render_step5_instinct()
+    elif step == 6:
+        _render_step6_supplemental()
 
     st.divider()
     nav_prev, nav_mid, nav_next = st.columns([1, 2, 1])
 
     with nav_prev:
         if step > 1 and st.button("← 戻る", use_container_width=True):
-            st.session_state.assessment_step -= 1
+            if step == 3 and not st.session_state.get("center_tiebreak_pair"):
+                st.session_state.assessment_step = 1
+            elif step == 2:
+                st.session_state.assessment_step = 1
+            else:
+                st.session_state.assessment_step -= 1
             st.rerun()
 
     with nav_mid:
@@ -541,7 +601,20 @@ def render_enneagram_assessment() -> None:
                     for err in errors:
                         st.error(err)
                 else:
-                    st.session_state.assessment_step += 1
+                    if step == 1:
+                        base = analyze_center_base(st.session_state.center_answers)
+                        if base.borderline:
+                            st.session_state.center_tiebreak_pair = base.tiebreak_pair
+                            st.session_state.center_tiebreak_answers = {}
+                            st.session_state.assessment_step = 2
+                        else:
+                            st.session_state.center_tiebreak_pair = None
+                            st.session_state.center_tiebreak_answers = {}
+                            st.session_state.assessment_step = 3
+                    elif step == 2:
+                        st.session_state.assessment_step = 3
+                    else:
+                        st.session_state.assessment_step += 1
                     st.rerun()
         elif step == TOTAL_STEPS:
             if st.button("診断結果を見る", use_container_width=True, type="primary"):

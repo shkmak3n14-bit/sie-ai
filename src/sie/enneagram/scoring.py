@@ -3,17 +3,20 @@
 from __future__ import annotations
 
 from collections import defaultdict
+from dataclasses import dataclass
 
 from sie.enneagram.inputs import AssessmentInput, BehaviorLog, EpisodeInput, SelfOtherGap
 from sie.enneagram.profile import InstinctualVariant
 from sie.enneagram.questions import (
-    CENTER_QUESTIONS,
     CENTER_TYPE_QUESTIONS,
     INSTINCT_QUESTIONS,
     Question,
+    get_center_questions,
 )
 from sie.enneagram.wing_questions import get_wing_questions
 from sie.enneagram.types import CENTER_TYPES, Center, wing_types
+
+CENTER_BORDERLINE_GAP_RATIO = 0.15
 
 
 def _score_from_answers(
@@ -44,14 +47,106 @@ def _winner(scores: dict[str, float]) -> str:
     return max(scores, key=scores.get)
 
 
-def score_center(answers: dict[str, int]) -> Center:
-    totals = score_center_totals(answers)
+@dataclass(frozen=True)
+class CenterAnalysis:
+    """Result of center scoring with confidence and borderline detection."""
+
+    center: Center
+    totals: dict[str, float]
+    confidence: float
+    borderline: bool
+    tiebreak_pair: tuple[Center, Center] | None
+    ranked: tuple[tuple[str, float], ...]
+
+
+def score_center_base_totals(center_answers: dict[str, int]) -> dict[str, float]:
+    """Score Step 1 base + core center questions only."""
+    return _score_from_answers(get_center_questions(), center_answers, ("body", "heart", "head"))
+
+
+def score_center_totals(
+    center_answers: dict[str, int],
+    tiebreak_answers: dict[str, int] | None = None,
+    tiebreak_pair: tuple[Center, Center] | None = None,
+) -> dict[str, float]:
+    """Score all center answers, optionally including tie-breaker questions."""
+    totals: dict[str, float] = defaultdict(float)
+    for key, value in score_center_base_totals(center_answers).items():
+        totals[key] += value
+
+    if tiebreak_answers and tiebreak_pair:
+        from sie.enneagram.center_tiebreak_questions import get_center_tiebreak_questions
+
+        questions = get_center_tiebreak_questions(tiebreak_pair)
+        keys = (tiebreak_pair[0].value, tiebreak_pair[1].value)
+        for key, value in _score_from_answers(questions, tiebreak_answers, keys).items():
+            totals[key] += value
+
+    return dict(totals)
+
+
+def analyze_center_base(center_answers: dict[str, int]) -> CenterAnalysis:
+    """Analyze center scores from Step 1 only; detect borderline pairs."""
+    from sie.enneagram.center_tiebreak_questions import normalize_center_pair
+
+    totals = score_center_base_totals(center_answers)
+    if not totals:
+        raise ValueError("スコアが空です。回答を確認してください。")
+
+    ranked = tuple(sorted(totals.items(), key=lambda item: item[1], reverse=True))
+    winner_key = ranked[0][0]
+    total = sum(totals.values()) or 1.0
+    confidence = ranked[0][1] / total
+
+    gap_ratio = (ranked[0][1] - ranked[1][1]) / total if len(ranked) > 1 else 1.0
+    borderline = gap_ratio <= CENTER_BORDERLINE_GAP_RATIO
+    tiebreak_pair = None
+    if borderline and len(ranked) > 1:
+        tiebreak_pair = normalize_center_pair(Center(ranked[0][0]), Center(ranked[1][0]))
+
+    return CenterAnalysis(
+        center=Center(winner_key),
+        totals=totals,
+        confidence=confidence,
+        borderline=borderline,
+        tiebreak_pair=tiebreak_pair,
+        ranked=ranked,
+    )
+
+
+def analyze_center_final(
+    center_answers: dict[str, int],
+    tiebreak_answers: dict[str, int] | None = None,
+    tiebreak_pair: tuple[Center, Center] | None = None,
+) -> CenterAnalysis:
+    """Analyze center scores including optional tie-breaker answers."""
+    totals = score_center_totals(center_answers, tiebreak_answers, tiebreak_pair)
+    if not totals:
+        raise ValueError("スコアが空です。回答を確認してください。")
+
+    ranked = tuple(sorted(totals.items(), key=lambda item: item[1], reverse=True))
+    winner_key = ranked[0][0]
+    total = sum(totals.values()) or 1.0
+    confidence = ranked[0][1] / total
+
+    return CenterAnalysis(
+        center=Center(winner_key),
+        totals=totals,
+        confidence=confidence,
+        borderline=False,
+        tiebreak_pair=tiebreak_pair,
+        ranked=ranked,
+    )
+
+
+def score_center(
+    center_answers: dict[str, int],
+    tiebreak_answers: dict[str, int] | None = None,
+    tiebreak_pair: tuple[Center, Center] | None = None,
+) -> Center:
+    totals = score_center_totals(center_answers, tiebreak_answers, tiebreak_pair)
     winner = _winner(totals)
     return Center(winner)
-
-
-def score_center_totals(answers: dict[str, int]) -> dict[str, float]:
-    return _score_from_answers(CENTER_QUESTIONS, answers, ("body", "heart", "head"))
 
 
 def score_type_totals_in_center(center: Center, answers: dict[str, int]) -> dict[int, float]:

@@ -8,6 +8,7 @@ from sie.enneagram.questions import (
     CENTER_QUESTIONS,
     INSTINCT_QUESTIONS,
     get_all_questions,
+    get_center_questions,
     get_type_questions,
 )
 from sie.enneagram.wing_questions import get_wing_questions
@@ -18,6 +19,7 @@ __all__ = [
     "BehaviorLog",
     "Center",
     "CENTER_QUESTIONS",
+    "get_center_questions",
     "EnneagramProfile",
     "EpisodeInput",
     "EpisodeSample",
