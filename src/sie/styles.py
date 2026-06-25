@@ -36,19 +36,43 @@ APP_CSS = """
 [data-testid="stBottom"] > div {
     background-color: #0f1419;
 }
+
+/* White-background inputs: force dark text (overrides global light text) */
+[data-testid="stTextInput"] input,
+[data-testid="stTextArea"] textarea,
+[data-testid="stNumberInput"] input,
+[data-testid="stDateInput"] input,
+[data-testid="stTimeInput"] input,
+[data-testid="stChatInput"] textarea {
+    color: #000000 !important;
+    -webkit-text-fill-color: #000000 !important;
+    background-color: #ffffff !important;
+    caret-color: #000000;
+}
+[data-testid="stTextInput"] input::placeholder,
+[data-testid="stTextArea"] textarea::placeholder,
+[data-testid="stNumberInput"] input::placeholder,
+[data-testid="stChatInput"] textarea::placeholder {
+    color: rgba(0, 0, 0, 0.45) !important;
+    -webkit-text-fill-color: rgba(0, 0, 0, 0.45) !important;
+}
+[data-testid="stSelectbox"] [data-baseweb="select"] > div,
+[data-testid="stSelectbox"] [data-baseweb="select"] span,
+[data-testid="stSelectbox"] [data-baseweb="select"] input {
+    color: #000000 !important;
+    -webkit-text-fill-color: #000000 !important;
+}
+.stApp [data-baseweb="input"] input,
+.stApp [data-baseweb="textarea"] {
+    color: #000000 !important;
+    -webkit-text-fill-color: #000000 !important;
+    caret-color: #000000;
+}
 [data-testid="stChatInput"] {
     background-color: #ffffff;
     border-color: #cccccc;
     color: #000000;
     caret-color: #000000;
-}
-[data-testid="stChatInput"] textarea {
-    color: #000000 !important;
-    background-color: #ffffff !important;
-    caret-color: #000000;
-}
-[data-testid="stChatInput"] textarea::placeholder {
-    color: rgba(0, 0, 0, 0.45) !important;
 }
 [data-testid="stChatInput"] button {
     color: #000000;
