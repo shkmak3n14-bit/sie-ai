@@ -8,11 +8,10 @@ from sie.enneagram.inputs import AssessmentInput
 from sie.enneagram.profile import EnneagramProfile
 from sie.enneagram.questions import (
     CENTER_QUESTIONS,
-    CENTER_TYPE_QUESTIONS,
     INSTINCT_QUESTIONS,
-    WING_QUESTIONS,
     get_type_questions,
 )
+from sie.enneagram.wing_questions import get_wing_questions
 from sie.enneagram.rationale import build_reasoning
 from sie.enneagram.scoring import (
     merge_type_scores,
@@ -59,7 +58,13 @@ def validate_input(data: AssessmentInput) -> list[str]:
     except ValueError:
         pass
 
-    errors.extend(_validate_answers(WING_QUESTIONS, data.wing_answers, "ウイング判定"))
+    try:
+        center = score_center(data.center_answers)
+        question_primary = score_type_in_center(center, data.type_answers)
+        wing_questions = get_wing_questions(question_primary)
+        errors.extend(_validate_answers(wing_questions, data.wing_answers, "ウイング判定"))
+    except ValueError:
+        pass
     errors.extend(_validate_answers(INSTINCT_QUESTIONS, data.instinct_answers, "本能判定"))
     return errors
 
@@ -101,11 +106,11 @@ def run_assessment(data: AssessmentInput) -> EnneagramProfile:
             supplemental_type, score_self_other_gap(data.self_other_gap)
         )
 
-    primary_type = refine_primary_type(center, question_primary, supplemental_type)
-
     wing, wing_low, wing_high, wing_totals = score_wing_detail(
-        primary_type, data.wing_answers
+        question_primary, data.wing_answers
     )
+
+    primary_type = refine_primary_type(center, question_primary, supplemental_type)
 
     instinct_scores = defaultdict(float)
     for question in INSTINCT_QUESTIONS:

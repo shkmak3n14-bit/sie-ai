@@ -10,9 +10,9 @@ from sie.enneagram.questions import (
     CENTER_QUESTIONS,
     CENTER_TYPE_QUESTIONS,
     INSTINCT_QUESTIONS,
-    WING_QUESTIONS,
     Question,
 )
+from sie.enneagram.wing_questions import get_wing_questions
 from sie.enneagram.types import CENTER_TYPES, Center, wing_types
 
 
@@ -74,10 +74,16 @@ def score_wing_detail(
 ) -> tuple[int, int, int, dict[str, float]]:
     """Return (chosen_wing, wing_low, wing_high, wing_low/high totals)."""
     wing_low, wing_high = wing_types(primary_type)
-    totals = _score_from_answers(WING_QUESTIONS, answers, ("wing_low", "wing_high"))
-    if not totals:
+    questions = get_wing_questions(primary_type)
+    type_keys = (str(wing_low), str(wing_high))
+    totals_raw = _score_from_answers(questions, answers, type_keys)
+    totals = {
+        "wing_low": totals_raw.get(str(wing_low), 0),
+        "wing_high": totals_raw.get(str(wing_high), 0),
+    }
+    if not totals_raw:
         return wing_low, wing_low, wing_high, totals
-    wing = wing_low if totals.get("wing_low", 0) >= totals.get("wing_high", 0) else wing_high
+    wing = wing_low if totals["wing_low"] >= totals["wing_high"] else wing_high
     return wing, wing_low, wing_high, totals
 
 

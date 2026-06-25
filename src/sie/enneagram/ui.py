@@ -12,13 +12,13 @@ from sie.enneagram.questions import (
     INSTINCT_QUESTIONS,
     RELATIONSHIP_OPTIONS,
     STRESS_REACTION_OPTIONS,
-    WING_QUESTIONS,
     WORK_ROLE_OPTIONS,
     Question,
     get_type_questions,
 )
-from sie.enneagram.scoring import score_center
-from sie.enneagram.types import Center, get_type_info
+from sie.enneagram.scoring import score_center, score_type_in_center
+from sie.enneagram.types import Center, get_type_info, wing_types
+from sie.enneagram.wing_questions import get_wing_questions
 
 TOTAL_STEPS = 5
 
@@ -45,6 +45,12 @@ CATEGORY_LABELS = {
     "safety": "安全（sp）",
     "role": "役割（so）",
     "intimacy": "親密（sx）",
+    "conflict": "対立時",
+    "social": "対人・集団",
+    "stress": "ストレス時",
+    "expression": "表現の仕方",
+    "relationship": "関係性",
+    "decision": "選択・判断",
 }
 
 CENTER_LABELS = {
@@ -228,10 +234,17 @@ def _render_step2() -> None:
 
 
 def _render_step3() -> None:
-    st.markdown("### ウイング（隣接タイプの傾向）")
-    st.caption("6問 — 外向/内向・方向性・表現")
+    center = score_center(st.session_state.center_answers)
+    question_primary = score_type_in_center(center, st.session_state.type_answers)
+    wing_low, wing_high = wing_types(question_primary)
+    questions = get_wing_questions(question_primary)
+    st.markdown(f"### タイプ {question_primary} のウイング判定")
+    st.caption(
+        f"8問 — タイプ {wing_low}（w{wing_low}）と タイプ {wing_high}（w{wing_high}）"
+        "のどちらに近いか"
+    )
     st.session_state.wing_answers = _render_questions_by_category(
-        WING_QUESTIONS,
+        questions,
         st.session_state.wing_answers,
         "wing",
     )
@@ -373,7 +386,10 @@ def _validate_current_step(step: int) -> list[str]:
         if not _questions_complete(questions, st.session_state.type_answers):
             return ["すべてのタイプ判定の質問に回答してください。"]
     elif step == 3:
-        if not _questions_complete(WING_QUESTIONS, st.session_state.wing_answers):
+        center = score_center(st.session_state.center_answers)
+        question_primary = score_type_in_center(center, st.session_state.type_answers)
+        questions = get_wing_questions(question_primary)
+        if not _questions_complete(questions, st.session_state.wing_answers):
             return ["すべてのウイング判定の質問に回答してください。"]
     elif step == 4:
         if not _questions_complete(INSTINCT_QUESTIONS, st.session_state.instinct_answers):

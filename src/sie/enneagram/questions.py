@@ -475,69 +475,9 @@ CENTER_TYPE_QUESTIONS: dict[Center, tuple[Question, ...]] = {
 }
 
 # ---------------------------------------------------------------------------
-# Step 3: Wing determination (6 questions) — under 18
-# ---------------------------------------------------------------------------
-
-WING_QUESTIONS: tuple[Question, ...] = (
-    Question(
-        id="w01",
-        text="入学式や合宿で、知らない人ばかりの場。最初の30分、あなたは？",
-        category="extraversion",
-        options=_opts(
-            ("隅で様子を見る。話しかけられたら答える", {"wing_low": 1.0}),
-            ("自分から話しかけ、場を盛り上げる", {"wing_high": 1.0}),
-        ),
-    ),
-    Question(
-        id="w02",
-        text="家庭科の課題で、初めて料理を作ります。あなたに近いのは？",
-        category="action_direction",
-        options=_opts(
-            ("レシピを何度も読んで、材料を揃えてから作る", {"wing_low": 1.0}),
-            ("だいたい見て、作りながら直す", {"wing_high": 1.0}),
-        ),
-    ),
-    Question(
-        id="w03",
-        text="友達に「最近どう？」と聞かれました。話し方に近いのは？",
-        category="expression_texture",
-        options=_opts(
-            ("少しずつ、自分の中身を丁寧に話す", {"wing_low": 1.0}),
-            ("元気よく、わかりやすくテンポよく話す", {"wing_high": 1.0}),
-        ),
-    ),
-    Question(
-        id="w04",
-        text="休日、友達と会うならどちらが近い？",
-        category="extraversion",
-        options=_opts(
-            ("親しい1〜2人と、ゆっくり過ごす", {"wing_low": 1.0}),
-            ("大勢でワイワイ、新しい友達とも会う", {"wing_high": 1.0}),
-        ),
-    ),
-    Question(
-        id="w05",
-        text="ゲーム機やスマホが壊れました。最初にすることに近いのは？",
-        category="action_direction",
-        options=_opts(
-            ("説明書やネットで原因を調べる", {"wing_low": 1.0}),
-            ("すぐ親に相談する・修理や買い替えを考える", {"wing_high": 1.0}),
-        ),
-    ),
-    Question(
-        id="w06",
-        text="授業や部活で意見を言うとき、自分に近いスタイルは？",
-        category="expression_texture",
-        options=_opts(
-            ("言葉を選び、少し控えめに伝える", {"wing_low": 1.0}),
-            ("はっきり、短く、ストレートに言う", {"wing_high": 1.0}),
-        ),
-    ),
-)
-
-# ---------------------------------------------------------------------------
 # Step 4: Instinctual variant (12 questions) — under 18
 # ---------------------------------------------------------------------------
+# Step 3 wing questions: see wing_questions.py (8 questions per primary type)
 
 INSTINCT_QUESTIONS: tuple[Question, ...] = (
     Question(
@@ -705,6 +645,5 @@ def get_all_questions() -> dict[str, tuple[Question, ...]]:
         "type_body": BODY_TYPE_QUESTIONS,
         "type_heart": HEART_TYPE_QUESTIONS,
         "type_head": HEAD_TYPE_QUESTIONS,
-        "wing": WING_QUESTIONS,
         "instinct": INSTINCT_QUESTIONS,
     }

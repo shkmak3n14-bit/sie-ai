@@ -10,13 +10,14 @@ from sie.enneagram import (
     EpisodeSample,
     INSTINCT_QUESTIONS,
     SelfOtherGap,
-    WING_QUESTIONS,
     get_type_questions,
+    get_wing_questions,
     run_assessment,
     validate_input,
 )
-from sie.enneagram.scoring import score_center as _score_center
+from sie.enneagram.scoring import score_center as _score_center, score_type_in_center
 from sie.enneagram.types import Center
+from sie.enneagram.wing_questions import WING_QUESTIONS_BY_TYPE
 
 
 def _all_zeros(questions, value: int = 0) -> dict[str, int]:
@@ -27,12 +28,18 @@ def _body_type_answers() -> dict[str, int]:
     return _all_zeros(get_type_questions(Center.BODY), 0)
 
 
+def _wing_answers_for_body_type() -> dict[str, int]:
+    center = _score_center(_all_zeros(CENTER_QUESTIONS, 0))
+    question_primary = score_type_in_center(center, _body_type_answers())
+    return _all_zeros(get_wing_questions(question_primary), 0)
+
+
 @pytest.fixture
 def minimal_input() -> AssessmentInput:
     return AssessmentInput(
         center_answers=_all_zeros(CENTER_QUESTIONS, 0),
         type_answers=_body_type_answers(),
-        wing_answers=_all_zeros(WING_QUESTIONS, 0),
+        wing_answers=_wing_answers_for_body_type(),
         instinct_answers=_all_zeros(INSTINCT_QUESTIONS, 0),
         episodes=EpisodeInput(
             recent_conflict="正しく改善したい",
@@ -89,5 +96,6 @@ def test_question_counts() -> None:
     assert len(get_type_questions(Center.BODY)) == 9
     assert len(get_type_questions(Center.HEART)) == 9
     assert len(get_type_questions(Center.HEAD)) == 9
-    assert len(WING_QUESTIONS) == 6
+    for primary in range(1, 10):
+        assert len(WING_QUESTIONS_BY_TYPE[primary]) == 8
     assert len(INSTINCT_QUESTIONS) == 12

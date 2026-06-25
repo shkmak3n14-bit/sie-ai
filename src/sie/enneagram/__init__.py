@@ -7,10 +7,10 @@ from sie.enneagram.profile import EnneagramProfile, EpisodeSample, InstinctualVa
 from sie.enneagram.questions import (
     CENTER_QUESTIONS,
     INSTINCT_QUESTIONS,
-    WING_QUESTIONS,
     get_all_questions,
     get_type_questions,
 )
+from sie.enneagram.wing_questions import get_wing_questions
 from sie.enneagram.types import Center, get_type_info
 
 __all__ = [
@@ -24,8 +24,8 @@ __all__ = [
     "InstinctualVariant",
     "INSTINCT_QUESTIONS",
     "SelfOtherGap",
-    "WING_QUESTIONS",
     "get_all_questions",
+    "get_wing_questions",
     "get_enneagram_instruction",
     "get_type_info",
     "get_type_questions",
