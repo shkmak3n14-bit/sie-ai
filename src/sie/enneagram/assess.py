@@ -12,23 +12,28 @@ from sie.enneagram.questions import (
     get_type_questions,
 )
 from sie.enneagram.wing_questions import get_wing_questions
+from sie.enneagram.center_crosscheck import (
+    apply_cross_center_adjustment,
+    analyze_cross_center_alignment,
+)
 from sie.enneagram.rationale import build_reasoning
 from sie.enneagram.scoring import (
     analyze_center_base,
     analyze_center_final,
+    gather_supplemental_type,
     merge_type_scores,
     normalize_type_scores,
-    refine_primary_type,
-    score_behavior_log,
+    refine_center_with_supplemental,
+    refine_primary_type_detailed,
+    RefinedTypeResult,
     score_center,
     score_episodes,
     score_instinct,
-    score_self_other_gap,
-    score_type_in_center,
-    score_type_totals_in_center,
+    score_supplemental_center,
     score_wing_detail,
 )
 from sie.enneagram.types import (
+    CENTER_TYPES,
     GROWTH_PATTERN,
     STRESS_PATTERN,
     get_type_info,
@@ -75,17 +80,35 @@ def validate_input(data: AssessmentInput) -> list[str]:
         )
         type_questions = get_type_questions(center)
         errors.extend(_validate_answers(type_questions, data.type_answers, "タイプ判定"))
-    except ValueError:
-        pass
+        try:
+            from sie.enneagram.scoring import analyze_type_base
 
-    try:
-        center = score_center(
-            data.center_answers,
-            data.center_tiebreak_answers or None,
-            data.center_tiebreak_pair,
+            type_base = analyze_type_base(center, data.type_answers)
+            if type_base.borderline:
+                if data.type_tiebreak_pair is None:
+                    errors.append("タイプ追加判定: 接戦のため追加質問への回答が必要です")
+                else:
+                    from sie.enneagram.type_tiebreak_questions import get_type_tiebreak_questions
+
+                    tb_questions = get_type_tiebreak_questions(
+                        center, data.type_tiebreak_pair
+                    )
+                    errors.extend(
+                        _validate_answers(
+                            tb_questions, data.type_tiebreak_answers, "タイプ追加判定"
+                        )
+                    )
+        except ValueError:
+            pass
+        supplemental_type = gather_supplemental_type(data)
+        type_result = refine_primary_type_detailed(
+            center,
+            data.type_answers,
+            supplemental_type,
+            data.type_tiebreak_answers or None,
+            data.type_tiebreak_pair,
         )
-        question_primary = score_type_in_center(center, data.type_answers)
-        wing_questions = get_wing_questions(question_primary)
+        wing_questions = get_wing_questions(type_result.refined)
         errors.extend(_validate_answers(wing_questions, data.wing_answers, "ウイング判定"))
     except ValueError:
         pass
@@ -107,45 +130,79 @@ def run_assessment(data: AssessmentInput) -> EnneagramProfile:
     if errors:
         raise ValueError("\n".join(errors))
 
-    center = score_center(
+    question_center_analysis = analyze_center_final(
         data.center_answers,
         data.center_tiebreak_answers or None,
         data.center_tiebreak_pair,
     )
-    center_analysis = analyze_center_final(
-        data.center_answers,
-        data.center_tiebreak_answers or None,
-        data.center_tiebreak_pair,
-    )
-    center_totals = center_analysis.totals
-    center_confidence = center_analysis.confidence
     tiebreak_used = bool(data.center_tiebreak_pair and data.center_tiebreak_answers)
-    question_primary = score_type_in_center(center, data.type_answers)
-    type_totals_in_center = score_type_totals_in_center(center, data.type_answers)
 
-    supplemental_type: dict[int, float] = defaultdict(float)
+    _, episode_instinct = score_episodes(data.episodes)
+    supplemental_type = gather_supplemental_type(data)
     supplemental_instinct: dict[str, float] = defaultdict(float)
-
-    episode_type, episode_instinct = score_episodes(data.episodes)
-    supplemental_type = merge_type_scores(supplemental_type, episode_type)
     for k, v in episode_instinct.items():
         supplemental_instinct[k] += v
 
-    if data.behavior_log is not None:
-        supplemental_type = merge_type_scores(
-            supplemental_type, score_behavior_log(data.behavior_log)
+    supplemental_center = score_supplemental_center(data)
+    refined_center = refine_center_with_supplemental(
+        question_center_analysis, supplemental_center
+    )
+    center = refined_center.center
+    center_totals = refined_center.totals
+    center_confidence = refined_center.confidence
+
+    type_answered_center = question_center_analysis.center
+    type_tiebreak_used = bool(data.type_tiebreak_pair and data.type_tiebreak_answers)
+    cross_center = analyze_cross_center_alignment(
+        selected_center=center,
+        type_answered_center=type_answered_center,
+        type_answers=data.type_answers,
+        supplemental_type=dict(supplemental_type),
+        type_tiebreak_answers=data.type_tiebreak_answers or None,
+        type_tiebreak_pair=data.type_tiebreak_pair,
+    )
+    cross_adjusted = False
+    adjusted_center, cross_adjusted = apply_cross_center_adjustment(
+        current_center=center,
+        center_confidence=center_confidence,
+        cross=cross_center,
+        already_adjusted_by_supplemental=refined_center.adjusted,
+    )
+    if cross_adjusted:
+        center = adjusted_center
+
+    question_center = refined_center.question_center
+
+    if center == type_answered_center:
+        type_result = refine_primary_type_detailed(
+            center,
+            data.type_answers,
+            supplemental_type,
+            data.type_tiebreak_answers or None,
+            data.type_tiebreak_pair,
+        )
+    else:
+        types_in = CENTER_TYPES[center]
+        fallback_primary = max(types_in, key=lambda t: supplemental_type.get(t, 0.0))
+        merged = {t: supplemental_type.get(t, 0.0) for t in types_in}
+        total = sum(merged.values()) or 1.0
+        type_result = RefinedTypeResult(
+            refined=fallback_primary,
+            question_primary=fallback_primary,
+            merged_totals=merged,
+            confidence=merged.get(fallback_primary, 0.0) / total,
+            adjusted=False,
         )
 
-    if data.self_other_gap is not None:
-        supplemental_type = merge_type_scores(
-            supplemental_type, score_self_other_gap(data.self_other_gap)
-        )
+    primary_type = type_result.refined
+    question_primary = type_result.question_primary
+    type_totals_in_center = type_result.merged_totals
+    type_confidence = type_result.confidence
+    type_adjusted_by_supplemental = type_result.adjusted
 
     wing, wing_low, wing_high, wing_totals = score_wing_detail(
-        question_primary, data.wing_answers
+        primary_type, data.wing_answers
     )
-
-    primary_type = refine_primary_type(center, question_primary, supplemental_type)
 
     instinct_scores = defaultdict(float)
     for question in INSTINCT_QUESTIONS:
@@ -175,8 +232,19 @@ def run_assessment(data: AssessmentInput) -> EnneagramProfile:
         center_confidence=center_confidence,
         center_tiebreak_used=tiebreak_used,
         center_tiebreak_pair=data.center_tiebreak_pair,
+        center_adjusted_by_supplemental=refined_center.adjusted,
+        center_supplemental_totals=refined_center.supplemental_totals,
+        center_supplemental_suggested=refined_center.supplemental_suggested,
+        question_center=question_center,
+        cross_center=cross_center,
+        cross_center_adjusted=cross_adjusted,
+        type_answered_center=type_answered_center,
+        type_tiebreak_used=type_tiebreak_used,
+        type_tiebreak_pair=data.type_tiebreak_pair,
         question_primary=question_primary,
         refined_primary=primary_type,
+        type_confidence=type_confidence,
+        type_adjusted_by_supplemental=type_adjusted_by_supplemental,
         type_totals_in_center=type_totals_in_center,
         supplemental_type=dict(supplemental_type),
         wing=wing,

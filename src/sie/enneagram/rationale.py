@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from sie.enneagram.center_crosscheck import CrossCenterAnalysis
 from sie.enneagram.types import CENTER_TYPES, Center, wing_types
 
 CENTER_LABELS = {
@@ -26,8 +27,19 @@ def build_reasoning(
     center_confidence: float,
     center_tiebreak_used: bool,
     center_tiebreak_pair: tuple[Center, Center] | None,
+    center_adjusted_by_supplemental: bool,
+    center_supplemental_totals: dict[str, float],
+    center_supplemental_suggested: Center | None,
+    question_center: Center,
+    cross_center: CrossCenterAnalysis | None,
+    cross_center_adjusted: bool,
+    type_answered_center: Center,
+    type_tiebreak_used: bool,
+    type_tiebreak_pair: tuple[int, int] | None,
     question_primary: int,
     refined_primary: int,
+    type_confidence: float,
+    type_adjusted_by_supplemental: bool,
     type_totals_in_center: dict[int, float],
     supplemental_type: dict[int, float],
     wing: int,
@@ -67,21 +79,109 @@ def build_reasoning(
             "結果がしっくりこない場合は、時間を置いて再診断することをおすすめします。"
         )
 
+    if center_supplemental_totals:
+        labels = {
+            Center.BODY: "本能",
+            Center.HEART: "感情",
+            Center.HEAD: "思考",
+        }
+        supp_parts = " · ".join(
+            f"{labels[Center(k)]} {v:.1f}"
+            for k, v in sorted(center_supplemental_totals.items())
+            if v > 0
+        )
+        if supp_parts:
+            lines.append(f"【補足データ（センター）】{supp_parts}")
+
+    if center_adjusted_by_supplemental and center != question_center:
+        lines.append(
+            f"【センター調整】質問判定は {CENTER_LABELS[question_center]} でしたが、"
+            f"エピソード・行動ログ・自己/他者評価を加味し "
+            f"{CENTER_LABELS[center]} に調整しました（質問70%＋補足30%）。"
+        )
+    elif center_supplemental_suggested and center_supplemental_suggested != center:
+        lines.append(
+            f"【センター参考】補足データは {CENTER_LABELS[center_supplemental_suggested]} 寄りでしたが、"
+            f"質問判定の差が十分なため {CENTER_LABELS[center]} を維持しました。"
+        )
+    elif center_supplemental_totals and not center_adjusted_by_supplemental:
+        lines.append(
+            "【センター補足】エピソード等の補足データは質問判定と整合し、センターは変更していません。"
+        )
+
     type_in_center_total = sum(type_totals_in_center.values()) or 1.0
+    type_conf_pct = f"{type_confidence:.0%}"
     type_parts = " · ".join(
         f"タイプ{t} {_pct(v, type_in_center_total)}"
         for t, v in sorted(type_totals_in_center.items())
     )
-    lines.append(
-        f"【Step 2 タイプ（センター内）】質問回答のみではタイプ {question_primary} が最高（{type_parts}）。"
-    )
+    if type_adjusted_by_supplemental and question_primary != refined_primary:
+        lines.append(
+            f"【Step 2 タイプ（センター内）】質問回答ではタイプ {question_primary} が最高でしたが、"
+            f"エピソード・行動ログ・自己/他者評価を加味し（質問70%＋補足30%）、"
+            f"タイプ {refined_primary} に調整しました（統合得点: {type_parts}、判定信頼度 {type_conf_pct}）。"
+        )
+    else:
+        lines.append(
+            f"【Step 2 タイプ（センター内）】質問70%＋補足30%の統合得点で "
+            f"タイプ {refined_primary} が最高（{type_parts}、判定信頼度 {type_conf_pct}）。"
+        )
+        if question_primary != refined_primary:
+            lines.append(
+                f"【タイプ参考】質問回答のみではタイプ {question_primary} が最高でした。"
+            )
 
-    if question_primary != refined_primary:
+    if type_tiebreak_used and type_tiebreak_pair:
+        a, b = type_tiebreak_pair
+        lines.append(
+            f"【Step 2b タイプ追加判定】タイプ {a} とタイプ {b} が接戦だったため、"
+            f"追加5問で判別しました。"
+        )
+    elif type_confidence < 0.55:
+        lines.append(
+            "【タイプ判定】センター内の得点差が小さく、タイプ判定の信頼度はやや低めです。"
+            "結果がしっくりこない場合は、時間を置いて再診断することをおすすめします。"
+        )
+
+    if cross_center is not None:
+        align_parts = " · ".join(
+            f"{CENTER_LABELS[c].split('（')[0]}{cross_center.alignment_by_center[c]:.1f}"
+            for c in (Center.BODY, Center.HEART, Center.HEAD)
+        )
+        type_hint_parts = " · ".join(
+            f"{CENTER_LABELS[c].split('（')[0]}→タイプ{cross_center.best_type_by_center[c]}"
+            for c in (Center.BODY, Center.HEART, Center.HEAD)
+        )
+        lines.append(
+            f"【Step 2 クロス検証】3センター横断のタイプ整合: {align_parts}。"
+            f"（参考: {type_hint_parts}）"
+        )
+        if cross_center_adjusted and cross_center.best_center != cross_center.selected_center:
+            lines.append(
+                f"【センター再調整（クロス検証）】タイプパターンの整合性から "
+                f"{CENTER_LABELS[cross_center.best_center]} に調整しました。"
+            )
+        elif cross_center.mismatch and not cross_center_adjusted:
+            lines.append(
+                f"【センター参考（クロス検証）】タイプ回答・補足データは "
+                f"{CENTER_LABELS[cross_center.best_center]} 寄り（差 {_pct(cross_center.margin_ratio, 1.0)}）"
+                f"ですが、センター判定の信頼度が十分なため {CENTER_LABELS[center]} を維持しました。"
+            )
+        elif (
+            cross_center.best_center == center
+            and type_answered_center != center
+        ):
+            lines.append(
+                f"【クロス検証】タイプ質問は {CENTER_LABELS[type_answered_center]} で回答しましたが、"
+                f"補足データと整合し {CENTER_LABELS[center]} が妥当と判断しました。"
+            )
+
+    if question_primary != refined_primary and not type_adjusted_by_supplemental:
         lines.append(
             f"【補足データの反映】エピソード・行動ログ・自己/他者評価を加味し、"
             f"最終的な主タイプをタイプ {refined_primary} に調整しました。"
         )
-    else:
+    elif question_primary == refined_primary:
         supp_in_center = {
             t: v for t, v in supplemental_type.items() if t in CENTER_TYPES[center]
         }

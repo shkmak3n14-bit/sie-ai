@@ -6,17 +6,23 @@ from collections import defaultdict
 from dataclasses import dataclass
 
 from sie.enneagram.inputs import AssessmentInput, BehaviorLog, EpisodeInput, SelfOtherGap
-from sie.enneagram.profile import InstinctualVariant
+from sie.enneagram.profile import EpisodeSample, InstinctualVariant
 from sie.enneagram.questions import (
     CENTER_TYPE_QUESTIONS,
     INSTINCT_QUESTIONS,
     Question,
     get_center_questions,
+    get_type_questions,
 )
 from sie.enneagram.wing_questions import get_wing_questions
 from sie.enneagram.types import CENTER_TYPES, Center, wing_types
 
 CENTER_BORDERLINE_GAP_RATIO = 0.15
+TYPE_BORDERLINE_GAP_RATIO = 0.15
+CENTER_QUESTION_WEIGHT = 0.7
+CENTER_SUPPLEMENTAL_WEIGHT = 0.3
+TYPE_QUESTION_WEIGHT = 0.7
+TYPE_SUPPLEMENTAL_WEIGHT = 0.3
 
 
 def _score_from_answers(
@@ -57,6 +63,110 @@ class CenterAnalysis:
     borderline: bool
     tiebreak_pair: tuple[Center, Center] | None
     ranked: tuple[tuple[str, float], ...]
+
+
+def _center_gap_ratio(totals: dict[str, float]) -> float:
+    ranked = sorted(totals.items(), key=lambda item: item[1], reverse=True)
+    if len(ranked) < 2:
+        return 1.0
+    total = sum(totals.values()) or 1.0
+    return (ranked[0][1] - ranked[1][1]) / total
+
+
+def merge_center_scores(
+    question_totals: dict[str, float],
+    supplemental_totals: dict[str, float],
+) -> dict[str, float]:
+    """Blend question-based and supplemental center scores (70% / 30%)."""
+    supp_sum = sum(supplemental_totals.values())
+    if supp_sum <= 0:
+        return dict(question_totals)
+
+    q_sum = sum(question_totals.values()) or 1.0
+    scale = q_sum / supp_sum
+    merged: dict[str, float] = {}
+    for key in ("body", "heart", "head"):
+        merged[key] = (
+            question_totals.get(key, 0) * CENTER_QUESTION_WEIGHT
+            + supplemental_totals.get(key, 0) * scale * CENTER_SUPPLEMENTAL_WEIGHT
+        )
+    return merged
+
+
+@dataclass(frozen=True)
+class RefinedCenterResult:
+    """Center after optional supplemental adjustment."""
+
+    center: Center
+    totals: dict[str, float]
+    confidence: float
+    question_center: Center
+    question_totals: dict[str, float]
+    supplemental_totals: dict[str, float]
+    adjusted: bool
+    supplemental_suggested: Center | None
+
+
+def refine_center_with_supplemental(
+    question_analysis: CenterAnalysis,
+    supplemental_totals: dict[str, float],
+) -> RefinedCenterResult:
+    """
+    Apply supplemental center signals with a 70/30 blend.
+
+    The center may change only when the question-based gap is borderline (≤15%).
+    """
+    question_center = question_analysis.center
+    question_totals = question_analysis.totals
+    supp_sum = sum(supplemental_totals.values())
+
+    if supp_sum <= 0:
+        return RefinedCenterResult(
+            center=question_center,
+            totals=question_totals,
+            confidence=question_analysis.confidence,
+            question_center=question_center,
+            question_totals=question_totals,
+            supplemental_totals={},
+            adjusted=False,
+            supplemental_suggested=None,
+        )
+
+    merged = merge_center_scores(question_totals, supplemental_totals)
+    merged_winner = Center(_winner(merged))
+    allow_flip = _center_gap_ratio(question_totals) <= CENTER_BORDERLINE_GAP_RATIO
+
+    if merged_winner != question_center and not allow_flip:
+        merged_winner_key = merged_winner.value
+        ranked = tuple(sorted(question_totals.items(), key=lambda item: item[1], reverse=True))
+        total = sum(question_totals.values()) or 1.0
+        return RefinedCenterResult(
+            center=question_center,
+            totals=question_totals,
+            confidence=ranked[0][1] / total,
+            question_center=question_center,
+            question_totals=question_totals,
+            supplemental_totals=supplemental_totals,
+            adjusted=False,
+            supplemental_suggested=Center(merged_winner_key),
+        )
+
+    final_totals = merged
+    final_center = merged_winner
+    ranked = tuple(sorted(final_totals.items(), key=lambda item: item[1], reverse=True))
+    total = sum(final_totals.values()) or 1.0
+    adjusted = final_center != question_center
+
+    return RefinedCenterResult(
+        center=final_center,
+        totals=final_totals,
+        confidence=ranked[0][1] / total,
+        question_center=question_center,
+        question_totals=question_totals,
+        supplemental_totals=supplemental_totals,
+        adjusted=adjusted,
+        supplemental_suggested=None,
+    )
 
 
 def score_center_base_totals(center_answers: dict[str, int]) -> dict[str, float]:
@@ -149,15 +259,130 @@ def score_center(
     return Center(winner)
 
 
-def score_type_totals_in_center(center: Center, answers: dict[str, int]) -> dict[int, float]:
-    questions = CENTER_TYPE_QUESTIONS[center]
+@dataclass(frozen=True)
+class TypeAnalysis:
+    """Result of type scoring within a center with borderline detection."""
+
+    primary: int
+    totals: dict[int, float]
+    confidence: float
+    borderline: bool
+    tiebreak_pair: tuple[int, int] | None
+    ranked: tuple[tuple[int, float], ...]
+
+
+def score_type_base_totals(center: Center, answers: dict[str, int]) -> dict[int, float]:
+    """Score Step 2 type questions only (no tie-breaker)."""
+    questions = get_type_questions(center)
     type_keys = tuple(str(t) for t in CENTER_TYPES[center])
     totals = _score_from_answers(questions, answers, type_keys)
     return {int(k): v for k, v in totals.items()}
 
 
-def score_type_in_center(center: Center, answers: dict[str, int]) -> int:
-    totals = score_type_totals_in_center(center, answers)
+def score_type_totals_in_center(
+    center: Center,
+    answers: dict[str, int],
+    tiebreak_answers: dict[str, int] | None = None,
+    tiebreak_pair: tuple[int, int] | None = None,
+) -> dict[int, float]:
+    """Score type answers, optionally including tie-breaker questions."""
+    totals: dict[int, float] = defaultdict(float)
+    for t, v in score_type_base_totals(center, answers).items():
+        totals[t] += v
+
+    if tiebreak_answers and tiebreak_pair:
+        from sie.enneagram.type_tiebreak_questions import get_type_tiebreak_questions
+
+        questions = get_type_tiebreak_questions(center, tiebreak_pair)
+        keys = (str(tiebreak_pair[0]), str(tiebreak_pair[1]))
+        for key, value in _score_from_answers(questions, tiebreak_answers, keys).items():
+            totals[int(key)] += value
+
+    return dict(totals)
+
+
+def analyze_type_base(center: Center, type_answers: dict[str, int]) -> TypeAnalysis:
+    """Analyze type scores from Step 2 only; detect borderline pairs."""
+    from sie.enneagram.type_tiebreak_questions import normalize_type_pair
+
+    totals = score_type_base_totals(center, type_answers)
+    if not totals:
+        types = CENTER_TYPES[center]
+        return TypeAnalysis(
+            primary=types[0],
+            totals={},
+            confidence=0.0,
+            borderline=False,
+            tiebreak_pair=None,
+            ranked=(),
+        )
+
+    ranked = tuple(sorted(totals.items(), key=lambda item: item[1], reverse=True))
+    primary = ranked[0][0]
+    total = sum(totals.values()) or 1.0
+    confidence = ranked[0][1] / total
+
+    gap_ratio = (ranked[0][1] - ranked[1][1]) / total if len(ranked) > 1 else 1.0
+    borderline = gap_ratio <= TYPE_BORDERLINE_GAP_RATIO
+    tiebreak_pair = None
+    if borderline and len(ranked) > 1:
+        tiebreak_pair = normalize_type_pair(center, ranked[0][0], ranked[1][0])
+
+    return TypeAnalysis(
+        primary=primary,
+        totals=totals,
+        confidence=confidence,
+        borderline=borderline,
+        tiebreak_pair=tiebreak_pair,
+        ranked=ranked,
+    )
+
+
+def analyze_type_final(
+    center: Center,
+    type_answers: dict[str, int],
+    tiebreak_answers: dict[str, int] | None = None,
+    tiebreak_pair: tuple[int, int] | None = None,
+) -> TypeAnalysis:
+    """Analyze type scores including optional tie-breaker answers."""
+    totals = score_type_totals_in_center(
+        center, type_answers, tiebreak_answers, tiebreak_pair
+    )
+    if not totals:
+        types = CENTER_TYPES[center]
+        return TypeAnalysis(
+            primary=types[0],
+            totals={},
+            confidence=0.0,
+            borderline=False,
+            tiebreak_pair=tiebreak_pair,
+            ranked=(),
+        )
+
+    ranked = tuple(sorted(totals.items(), key=lambda item: item[1], reverse=True))
+    primary = ranked[0][0]
+    total = sum(totals.values()) or 1.0
+    confidence = ranked[0][1] / total
+
+    return TypeAnalysis(
+        primary=primary,
+        totals=totals,
+        confidence=confidence,
+        borderline=False,
+        tiebreak_pair=tiebreak_pair,
+        ranked=ranked,
+    )
+
+
+def score_type_in_center(
+    center: Center,
+    answers: dict[str, int],
+    tiebreak_answers: dict[str, int] | None = None,
+    tiebreak_pair: tuple[int, int] | None = None,
+) -> int:
+    totals = score_type_totals_in_center(
+        center, answers, tiebreak_answers, tiebreak_pair
+    )
     if not totals:
         raise ValueError("スコアが空です。回答を確認してください。")
     return max(totals, key=totals.get)
@@ -215,9 +440,48 @@ _TYPE_KEYWORDS: dict[int, tuple[str, ...]] = {
 }
 
 _CENTER_KEYWORDS: dict[Center, tuple[str, ...]] = {
-    Center.BODY: ("怒り", "体", "即座", "正しい", "平和", "硬い"),
-    Center.HEART: ("評価", "愛", "必要", "感情", "承認", "意味"),
-    Center.HEAD: ("不安", "分析", "可能性", "リスク", "考える", "情報"),
+    Center.BODY: ("怒り", "体", "即座", "正しい", "平和", "硬い", "イライラ", "腹"),
+    Center.HEART: ("評価", "愛", "必要", "感情", "承認", "意味", "恥", "比較"),
+    Center.HEAD: ("不安", "分析", "可能性", "リスク", "考える", "情報", "心配", "最悪"),
+}
+
+_BEHAVIOR_WORK_CENTER: tuple[Center, ...] = (
+    Center.BODY,   # リーダー
+    Center.HEART,  # 助ける
+    Center.HEAD,   # 調べる
+    Center.HEART,  # 成果
+    Center.BODY,   # 調整・平和
+)
+
+_BEHAVIOR_RELATION_CENTER: tuple[Center, ...] = (
+    Center.HEAD,   # 少数深く
+    Center.HEART,  # 広く
+    Center.HEAD,   # 距離を保つ
+    Center.HEART,  # 評価を気にする
+    Center.BODY,   # 平和
+)
+
+_BEHAVIOR_STRESS_CENTER: tuple[Center, ...] = (
+    Center.BODY,   # type 1 stress → 8 map index 0 → type 1 body
+    Center.HEART,  # type 2
+    Center.HEART,  # type 3
+    Center.HEART,  # type 4
+    Center.HEAD,   # type 5
+    Center.HEAD,   # type 6
+    Center.HEAD,   # type 7
+    Center.BODY,   # type 8
+    Center.BODY,   # type 9
+)
+
+_TRAIT_CENTER_WEIGHTS: dict[str, dict[Center, float]] = {
+    "assertive": {Center.BODY: 2.0},
+    "emotional": {Center.HEART: 2.0},
+    "analytical": {Center.HEAD: 2.0},
+    "helpful": {Center.HEART: 1.5},
+    "peaceful": {Center.BODY: 1.5},
+    "ambitious": {Center.HEART: 1.0, Center.BODY: 0.5},
+    "unique": {Center.HEART: 1.5},
+    "cautious": {Center.HEAD: 2.0},
 }
 
 _INSTINCT_KEYWORDS: dict[str, tuple[str, ...]] = {
@@ -225,6 +489,78 @@ _INSTINCT_KEYWORDS: dict[str, tuple[str, ...]] = {
     "so": ("所属", "役割", "評価", "グループ", "立場", "ネットワーク"),
     "sx": ("親密", "一人", "情熱", "深い", "特別", "関係"),
 }
+
+
+def score_episode_text_for_center(text: str) -> dict[str, float]:
+    """Score free text toward body / heart / head centers."""
+    scores: dict[str, float] = defaultdict(float)
+    for center, keywords in _CENTER_KEYWORDS.items():
+        scores[center.value] += _keyword_score(text, keywords, weight=0.5)
+    return dict(scores)
+
+
+def score_episodes_center(episodes: EpisodeInput) -> dict[str, float]:
+    combined = " ".join(
+        [episodes.recent_conflict, episodes.core_values, episodes.emotion_handling]
+    )
+    return score_episode_text_for_center(combined)
+
+
+def score_episode_samples_center(samples: list[EpisodeSample]) -> dict[str, float]:
+    combined = " ".join(
+        f"{s['event']} {s['feeling']} {s['action']}" for s in samples
+    )
+    return score_episode_text_for_center(combined)
+
+
+def score_behavior_log_center(log: BehaviorLog) -> dict[str, float]:
+    scores: dict[str, float] = defaultdict(float)
+
+    if 0 <= log.work_role < len(_BEHAVIOR_WORK_CENTER):
+        scores[_BEHAVIOR_WORK_CENTER[log.work_role].value] += 1.5
+
+    if 0 <= log.relationship_tendency < len(_BEHAVIOR_RELATION_CENTER):
+        scores[_BEHAVIOR_RELATION_CENTER[log.relationship_tendency].value] += 1.0
+
+    if 0 <= log.stress_reaction < len(_BEHAVIOR_STRESS_CENTER):
+        scores[_BEHAVIOR_STRESS_CENTER[log.stress_reaction].value] += 2.0
+
+    return dict(scores)
+
+
+def score_self_other_gap_center(gap: SelfOtherGap) -> dict[str, float]:
+    scores: dict[str, float] = defaultdict(float)
+
+    for trait in _SELF_OTHER_TRAITS:
+        self_val = gap.self_image.get(trait, 0)
+        other_val = gap.others_image.get(trait, 0)
+        avg = (self_val + other_val) / 2
+        for center, weight in _TRAIT_CENTER_WEIGHTS.get(trait, {}).items():
+            scores[center.value] += avg * weight * 0.15
+
+    return dict(scores)
+
+
+def score_supplemental_center(data: AssessmentInput) -> dict[str, float]:
+    """Aggregate supplemental signals for center refinement."""
+    scores: dict[str, float] = defaultdict(float)
+
+    for part in (
+        score_episodes_center(data.episodes),
+        score_episode_samples_center(data.episode_samples),
+    ):
+        for key, value in part.items():
+            scores[key] += value
+
+    if data.behavior_log is not None:
+        for key, value in score_behavior_log_center(data.behavior_log).items():
+            scores[key] += value
+
+    if data.self_other_gap is not None:
+        for key, value in score_self_other_gap_center(data.self_other_gap).items():
+            scores[key] += value
+
+    return dict(scores)
 
 
 def score_episodes(episodes: EpisodeInput) -> tuple[dict[int, float], dict[str, float]]:
@@ -328,17 +664,102 @@ def apply_center_filter(scores: dict[int, float], center: Center) -> dict[int, f
     return {n: v for n, v in scores.items() if n in allowed}
 
 
+def merge_type_scores_weighted(
+    question_totals: dict[int, float],
+    supplemental: dict[int, float],
+    center: Center,
+) -> dict[int, float]:
+    """Blend question-based and supplemental type scores (70% / 30%)."""
+    center_types = CENTER_TYPES[center]
+    q_filtered = {t: question_totals.get(t, 0.0) for t in center_types}
+    s_filtered = apply_center_filter(supplemental, center)
+    s_sum = sum(s_filtered.values())
+    if s_sum <= 0:
+        return q_filtered
+
+    q_sum = sum(q_filtered.values()) or 1.0
+    scale = q_sum / s_sum
+    merged: dict[int, float] = {}
+    for t in center_types:
+        merged[t] = (
+            q_filtered.get(t, 0.0) * TYPE_QUESTION_WEIGHT
+            + s_filtered.get(t, 0.0) * scale * TYPE_SUPPLEMENTAL_WEIGHT
+        )
+    return merged
+
+
+@dataclass(frozen=True)
+class RefinedTypeResult:
+    refined: int
+    question_primary: int
+    merged_totals: dict[int, float]
+    confidence: float
+    adjusted: bool
+
+
+def gather_supplemental_type(data: AssessmentInput) -> dict[int, float]:
+    """Collect supplemental type scores from assessment input."""
+    supplemental_type: dict[int, float] = defaultdict(float)
+
+    episode_type, _ = score_episodes(data.episodes)
+    supplemental_type = merge_type_scores(supplemental_type, episode_type)
+
+    if data.behavior_log is not None:
+        supplemental_type = merge_type_scores(
+            supplemental_type, score_behavior_log(data.behavior_log)
+        )
+
+    if data.self_other_gap is not None:
+        supplemental_type = merge_type_scores(
+            supplemental_type, score_self_other_gap(data.self_other_gap)
+        )
+
+    return dict(supplemental_type)
+
+
+def refine_primary_type_detailed(
+    center: Center,
+    type_answers: dict[str, int],
+    supplemental: dict[int, float],
+    type_tiebreak_answers: dict[str, int] | None = None,
+    type_tiebreak_pair: tuple[int, int] | None = None,
+) -> RefinedTypeResult:
+    """Combine Step 2 type answers with supplemental data (70% / 30%)."""
+    center_types = CENTER_TYPES[center]
+    question_totals = score_type_totals_in_center(
+        center,
+        type_answers,
+        type_tiebreak_answers,
+        type_tiebreak_pair,
+    )
+    if not question_totals:
+        question_primary = center_types[0]
+    else:
+        question_primary = max(question_totals, key=question_totals.get)
+
+    merged = merge_type_scores_weighted(question_totals, supplemental, center)
+    if not merged:
+        refined = question_primary
+    else:
+        refined = max(center_types, key=lambda t: merged.get(t, 0.0))
+
+    total = sum(merged.values()) or 1.0
+    confidence = merged.get(refined, 0.0) / total
+    adjusted = refined != question_primary
+
+    return RefinedTypeResult(
+        refined=refined,
+        question_primary=question_primary,
+        merged_totals=merged,
+        confidence=confidence,
+        adjusted=adjusted,
+    )
+
+
 def refine_primary_type(
     center: Center,
-    question_primary: int,
+    type_answers: dict[str, int],
     supplemental: dict[int, float],
 ) -> int:
     """Combine question-based type with supplemental signals."""
-    center_types = CENTER_TYPES[center]
-    combined = merge_type_scores(
-        {question_primary: 5.0},
-        apply_center_filter(supplemental, center),
-    )
-
-    best = max(center_types, key=lambda t: combined.get(t, 0.0))
-    return best
+    return refine_primary_type_detailed(center, type_answers, supplemental).refined

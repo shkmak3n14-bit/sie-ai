@@ -42,6 +42,8 @@ class AssessmentInput:
     center_tiebreak_answers: dict[str, int] = field(default_factory=dict)
     center_tiebreak_pair: tuple[Center, Center] | None = None
     type_answers: dict[str, int] = field(default_factory=dict)
+    type_tiebreak_answers: dict[str, int] = field(default_factory=dict)
+    type_tiebreak_pair: tuple[int, int] | None = None
     wing_answers: dict[str, int] = field(default_factory=dict)
     instinct_answers: dict[str, int] = field(default_factory=dict)
 

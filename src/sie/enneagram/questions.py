@@ -636,7 +636,9 @@ STRESS_REACTION_OPTIONS: tuple[str, ...] = (
 
 
 def get_type_questions(center: Center) -> tuple[Question, ...]:
-    return CENTER_TYPE_QUESTIONS[center]
+    from sie.enneagram.type_core_questions import get_type_core_questions
+
+    return CENTER_TYPE_QUESTIONS[center] + get_type_core_questions(center)
 
 
 def get_center_questions() -> tuple[Question, ...]:

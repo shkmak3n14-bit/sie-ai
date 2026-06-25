@@ -17,7 +17,11 @@ from sie.enneagram import (
     validate_input,
 )
 from sie.enneagram.center_core_questions import CENTER_CORE_QUESTIONS
-from sie.enneagram.scoring import score_center as _score_center, score_type_in_center
+from sie.enneagram.scoring import (
+    gather_supplemental_type,
+    refine_primary_type_detailed,
+    score_center as _score_center,
+)
 from sie.enneagram.types import Center
 from sie.enneagram.wing_questions import WING_QUESTIONS_BY_TYPE
 
@@ -30,30 +34,19 @@ def _body_type_answers() -> dict[str, int]:
     return _all_zeros(get_type_questions(Center.BODY), 0)
 
 
-def _wing_answers_for_body_type() -> dict[str, int]:
-    center = _score_center(_all_zeros(get_center_questions(), 0))
-    question_primary = score_type_in_center(center, _body_type_answers())
-    return _all_zeros(get_wing_questions(question_primary), 0)
-
-
-@pytest.fixture
-def minimal_input() -> AssessmentInput:
-    return AssessmentInput(
-        center_answers=_all_zeros(get_center_questions(), 0),
-        type_answers=_body_type_answers(),
-        wing_answers=_wing_answers_for_body_type(),
-        instinct_answers=_all_zeros(INSTINCT_QUESTIONS, 0),
-        episodes=EpisodeInput(
+def _supplemental_data() -> tuple[EpisodeInput, BehaviorLog, SelfOtherGap, list]:
+    return (
+        EpisodeInput(
             recent_conflict="正しく改善したい",
             core_values="責任と誠実さ",
             emotion_handling="怒りを抑える",
         ),
-        behavior_log=BehaviorLog(work_role=0, relationship_tendency=4, stress_reaction=0),
-        self_other_gap=SelfOtherGap(
+        BehaviorLog(work_role=0, relationship_tendency=4, stress_reaction=0),
+        SelfOtherGap(
             self_image={"assertive": 8, "peaceful": 3},
             others_image={"assertive": 4, "peaceful": 7},
         ),
-        episode_samples=[
+        [
             EpisodeSample(
                 event="職場で方針が乱れた",
                 feeling="苛立ち",
@@ -61,6 +54,39 @@ def minimal_input() -> AssessmentInput:
                 result="落ち着いた",
             )
         ],
+    )
+
+
+def _wing_answers_for_body_type() -> dict[str, int]:
+    center_answers = _all_zeros(get_center_questions(), 0)
+    center = _score_center(center_answers)
+    type_answers = _body_type_answers()
+    episodes, behavior_log, self_other_gap, episode_samples = _supplemental_data()
+    data = AssessmentInput(
+        center_answers=center_answers,
+        type_answers=type_answers,
+        episodes=episodes,
+        behavior_log=behavior_log,
+        self_other_gap=self_other_gap,
+        episode_samples=episode_samples,
+    )
+    supplemental = gather_supplemental_type(data)
+    primary = refine_primary_type_detailed(center, type_answers, supplemental).refined
+    return _all_zeros(get_wing_questions(primary), 0)
+
+
+@pytest.fixture
+def minimal_input() -> AssessmentInput:
+    episodes, behavior_log, self_other_gap, episode_samples = _supplemental_data()
+    return AssessmentInput(
+        center_answers=_all_zeros(get_center_questions(), 0),
+        type_answers=_body_type_answers(),
+        wing_answers=_wing_answers_for_body_type(),
+        instinct_answers=_all_zeros(INSTINCT_QUESTIONS, 0),
+        episodes=episodes,
+        behavior_log=behavior_log,
+        self_other_gap=self_other_gap,
+        episode_samples=episode_samples,
     )
 
 
@@ -97,9 +123,9 @@ def test_question_counts() -> None:
     assert len(CENTER_QUESTIONS) == 15
     assert len(CENTER_CORE_QUESTIONS) == 8
     assert len(get_center_questions()) == 23
-    assert len(get_type_questions(Center.BODY)) == 9
-    assert len(get_type_questions(Center.HEART)) == 9
-    assert len(get_type_questions(Center.HEAD)) == 9
+    assert len(get_type_questions(Center.BODY)) == 17
+    assert len(get_type_questions(Center.HEART)) == 17
+    assert len(get_type_questions(Center.HEAD)) == 17
     for primary in range(1, 10):
         assert len(WING_QUESTIONS_BY_TYPE[primary]) == 8
     assert len(INSTINCT_QUESTIONS) == 12

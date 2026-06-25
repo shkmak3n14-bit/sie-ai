@@ -16,20 +16,28 @@ from sie.enneagram.questions import (
     get_center_questions,
     get_type_questions,
 )
-from sie.enneagram.scoring import analyze_center_base, score_center, score_type_in_center
+from sie.enneagram.scoring import (
+    analyze_center_base,
+    analyze_type_base,
+    gather_supplemental_type,
+    refine_primary_type_detailed,
+    score_center,
+)
+from sie.enneagram.type_tiebreak_questions import get_type_tiebreak_questions
 from sie.enneagram.types import Center, get_type_info, wing_types
 from sie.enneagram.wing_questions import get_wing_questions
 from sie.enneagram.center_tiebreak_questions import get_center_tiebreak_questions
 
-TOTAL_STEPS = 6
+TOTAL_STEPS = 7
 
 STEP_TITLES = {
     1: "Step 1 — センター判定",
     2: "Step 1b — センター追加判定",
     3: "Step 2 — タイプ判定",
-    4: "Step 3 — ウイング判定",
-    5: "Step 4 — 本能サブタイプ",
-    6: "追加情報（精度向上）",
+    4: "Step 2b — タイプ追加判定",
+    5: "追加情報（タイプ精度向上）",
+    6: "Step 3 — ウイング判定",
+    7: "Step 4 — 本能サブタイプ",
 }
 
 CATEGORY_LABELS = {
@@ -55,6 +63,9 @@ CATEGORY_LABELS = {
     "decision": "選択・判断",
     "core_emotion": "コア感情（本能・感情・思考）",
     "center_tiebreak": "センター追加判別",
+    "core_fear": "コア恐れ",
+    "core_desire": "コア欲求",
+    "type_tiebreak": "タイプ追加判別",
 }
 
 CENTER_LABELS = {
@@ -83,7 +94,10 @@ def _init_assessment_state() -> None:
         "center_answers": {},
         "center_tiebreak_answers": {},
         "center_tiebreak_pair": None,
+        "wing_for_type": None,
         "type_answers": {},
+        "type_tiebreak_answers": {},
+        "type_tiebreak_pair": None,
         "wing_answers": {},
         "instinct_answers": {},
         "episode_conflict": "",
@@ -108,7 +122,10 @@ def reset_assessment() -> None:
         "center_answers",
         "center_tiebreak_answers",
         "center_tiebreak_pair",
+        "wing_for_type",
         "type_answers",
+        "type_tiebreak_answers",
+        "type_tiebreak_pair",
         "wing_answers",
         "instinct_answers",
         "episode_conflict",
@@ -265,11 +282,24 @@ def _render_step2_center_tiebreak() -> None:
     )
 
 
+def _preview_primary_type() -> int:
+    """Estimate primary type after supplemental (70/30) for wing step."""
+    center = _resolved_center()
+    supplemental = gather_supplemental_type(_build_assessment_input())
+    return refine_primary_type_detailed(
+        center,
+        st.session_state.type_answers,
+        supplemental,
+        st.session_state.type_tiebreak_answers or None,
+        st.session_state.type_tiebreak_pair,
+    ).refined
+
+
 def _render_step3_type() -> None:
     center = _resolved_center()
     questions = get_type_questions(center)
     st.markdown(f"### {CENTER_LABELS[center]}")
-    st.caption("9問 — 動機・恐れ・欲求・行動パターン")
+    st.caption("17問 — 動機・恐れ・欲求・行動パターン（9問）＋ コア恐れ・欲求（8問）")
     st.session_state.type_answers = _render_questions_by_category(
         questions,
         st.session_state.type_answers,
@@ -277,36 +307,39 @@ def _render_step3_type() -> None:
     )
 
 
-def _render_step4_wing() -> None:
+def _render_step4_type_tiebreak() -> None:
+    pair = st.session_state.type_tiebreak_pair
+    if not pair:
+        st.warning("追加判定は不要です。前のステップに戻ってください。")
+        return
+
     center = _resolved_center()
-    question_primary = score_type_in_center(center, st.session_state.type_answers)
-    wing_low, wing_high = wing_types(question_primary)
-    questions = get_wing_questions(question_primary)
-    st.markdown(f"### タイプ {question_primary} のウイング判定")
+    base = analyze_type_base(center, st.session_state.type_answers)
+    total = sum(base.totals.values()) or 1.0
+    types_in = sorted(base.totals.keys())
+    parts = " / ".join(
+        f"タイプ{t} {base.totals.get(t, 0) / total:.0%}" for t in types_in
+    )
+    a, b = pair
+    st.markdown("### タイプ判定が接戦のため、追加の5問にお答えください")
     st.caption(
-        f"8問 — タイプ {wing_low}（w{wing_low}）と タイプ {wing_high}（w{wing_high}）"
-        "のどちらに近いか"
+        f"Step 2 の結果: {parts}（1位と2位の差が小さいため）"
+        f" — タイプ {a} vs タイプ {b} を判別します"
     )
-    st.session_state.wing_answers = _render_questions_by_category(
+    questions = get_type_tiebreak_questions(center, pair)
+    st.session_state.type_tiebreak_answers = _render_questions_by_category(
         questions,
-        st.session_state.wing_answers,
-        "wing",
+        st.session_state.type_tiebreak_answers,
+        "type_tb",
     )
 
 
-def _render_step5_instinct() -> None:
-    st.markdown("### 本能サブタイプ（sp / so / sx）")
-    st.caption("12問 — 安全・役割・親密、どれを優先するか")
-    st.session_state.instinct_answers = _render_questions_by_category(
-        INSTINCT_QUESTIONS,
-        st.session_state.instinct_answers,
-        "instinct",
+def _render_step5_supplemental() -> None:
+    st.markdown("### 追加情報（タイプ精度向上）")
+    st.caption(
+        "任意ですが、入力するとタイプ判定の精度が上がります。"
+        "次のウイング判定は、ここまでの回答を反映したタイプに基づきます。"
     )
-
-
-def _render_step6_supplemental() -> None:
-    st.markdown("### 追加情報")
-    st.caption("任意ですが、入力すると診断精度が上がります。")
 
     st.markdown("#### エピソード（自由記述）")
     st.session_state.episode_conflict = st.text_area(
@@ -396,12 +429,43 @@ def _render_step6_supplemental() -> None:
             )
 
 
+def _render_step6_wing() -> None:
+    primary_type = _preview_primary_type()
+    if st.session_state.wing_for_type != primary_type:
+        st.session_state.wing_for_type = primary_type
+        st.session_state.wing_answers = {}
+    wing_low, wing_high = wing_types(primary_type)
+    questions = get_wing_questions(primary_type)
+    st.markdown(f"### タイプ {primary_type} のウイング判定")
+    st.caption(
+        f"8問 — タイプ {wing_low}（w{wing_low}）と タイプ {wing_high}（w{wing_high}）"
+        "のどちらに近いか（タイプ判定＋追加情報を反映した結果に基づきます）"
+    )
+    st.session_state.wing_answers = _render_questions_by_category(
+        questions,
+        st.session_state.wing_answers,
+        "wing",
+    )
+
+
+def _render_step7_instinct() -> None:
+    st.markdown("### 本能サブタイプ（sp / so / sx）")
+    st.caption("12問 — 安全・役割・親密、どれを優先するか")
+    st.session_state.instinct_answers = _render_questions_by_category(
+        INSTINCT_QUESTIONS,
+        st.session_state.instinct_answers,
+        "instinct",
+    )
+
+
 def _build_assessment_input() -> AssessmentInput:
     return AssessmentInput(
         center_answers=st.session_state.center_answers,
         center_tiebreak_answers=st.session_state.center_tiebreak_answers,
         center_tiebreak_pair=st.session_state.center_tiebreak_pair,
         type_answers=st.session_state.type_answers,
+        type_tiebreak_answers=st.session_state.type_tiebreak_answers,
+        type_tiebreak_pair=st.session_state.type_tiebreak_pair,
         wing_answers=st.session_state.wing_answers,
         instinct_answers=st.session_state.instinct_answers,
         episodes=EpisodeInput(
@@ -439,12 +503,21 @@ def _validate_current_step(step: int) -> list[str]:
         if not _questions_complete(questions, st.session_state.type_answers):
             return ["すべてのタイプ判定の質問に回答してください。"]
     elif step == 4:
+        pair = st.session_state.type_tiebreak_pair
+        if not pair:
+            return ["タイプ追加判定は不要です。"]
         center = _resolved_center()
-        question_primary = score_type_in_center(center, st.session_state.type_answers)
-        questions = get_wing_questions(question_primary)
+        questions = get_type_tiebreak_questions(center, pair)
+        if not _questions_complete(questions, st.session_state.type_tiebreak_answers):
+            return ["すべてのタイプ追加判定の質問に回答してください。"]
+    elif step == 5:
+        pass
+    elif step == 6:
+        primary_type = _preview_primary_type()
+        questions = get_wing_questions(primary_type)
         if not _questions_complete(questions, st.session_state.wing_answers):
             return ["すべてのウイング判定の質問に回答してください。"]
-    elif step == 5:
+    elif step == 7:
         if not _questions_complete(INSTINCT_QUESTIONS, st.session_state.instinct_answers):
             return ["すべての本能判定の質問に回答してください。"]
     return []
@@ -568,11 +641,13 @@ def render_enneagram_assessment() -> None:
     elif step == 3:
         _render_step3_type()
     elif step == 4:
-        _render_step4_wing()
+        _render_step4_type_tiebreak()
     elif step == 5:
-        _render_step5_instinct()
+        _render_step5_supplemental()
     elif step == 6:
-        _render_step6_supplemental()
+        _render_step6_wing()
+    elif step == 7:
+        _render_step7_instinct()
 
     st.divider()
     nav_prev, nav_mid, nav_next = st.columns([1, 2, 1])
@@ -581,6 +656,8 @@ def render_enneagram_assessment() -> None:
         if step > 1 and st.button("← 戻る", use_container_width=True):
             if step == 3 and not st.session_state.get("center_tiebreak_pair"):
                 st.session_state.assessment_step = 1
+            elif step == 5 and not st.session_state.get("type_tiebreak_pair"):
+                st.session_state.assessment_step = 3
             elif step == 2:
                 st.session_state.assessment_step = 1
             else:
@@ -613,6 +690,25 @@ def render_enneagram_assessment() -> None:
                             st.session_state.assessment_step = 3
                     elif step == 2:
                         st.session_state.assessment_step = 3
+                    elif step == 3:
+                        center = _resolved_center()
+                        type_base = analyze_type_base(center, st.session_state.type_answers)
+                        if type_base.borderline:
+                            st.session_state.type_tiebreak_pair = type_base.tiebreak_pair
+                            st.session_state.type_tiebreak_answers = {}
+                            st.session_state.assessment_step = 4
+                        else:
+                            st.session_state.type_tiebreak_pair = None
+                            st.session_state.type_tiebreak_answers = {}
+                            st.session_state.assessment_step = 5
+                    elif step == 4:
+                        st.session_state.assessment_step = 5
+                    elif step == 5:
+                        primary_type = _preview_primary_type()
+                        if st.session_state.wing_for_type != primary_type:
+                            st.session_state.wing_for_type = primary_type
+                            st.session_state.wing_answers = {}
+                        st.session_state.assessment_step = 6
                     else:
                         st.session_state.assessment_step += 1
                     st.rerun()
