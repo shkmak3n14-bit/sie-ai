@@ -21,6 +21,8 @@ from sie.enneagram.scoring import (
     analyze_type_base,
     gather_supplemental_type,
     refine_primary_type_detailed,
+    refine_type_from_supplemental_only,
+    resolve_final_center,
     score_center,
 )
 from sie.enneagram.type_tiebreak_questions import get_type_tiebreak_questions
@@ -28,7 +30,7 @@ from sie.enneagram.types import Center, get_type_info, wing_types
 from sie.enneagram.wing_questions import get_wing_questions
 from sie.enneagram.center_tiebreak_questions import get_center_tiebreak_questions
 
-TOTAL_STEPS = 7
+TOTAL_STEPS = 9
 
 STEP_TITLES = {
     1: "Step 1 — センター判定",
@@ -36,8 +38,10 @@ STEP_TITLES = {
     3: "Step 2 — タイプ判定",
     4: "Step 2b — タイプ追加判定",
     5: "追加情報（タイプ精度向上）",
-    6: "Step 3 — ウイング判定",
-    7: "Step 4 — 本能サブタイプ",
+    6: "Step 2c — タイプ再確認（センター変更時）",
+    7: "Step 2c — タイプ再確認追加判定",
+    8: "Step 3 — ウイング判定",
+    9: "Step 4 — 本能サブタイプ",
 }
 
 CATEGORY_LABELS = {
@@ -98,6 +102,10 @@ def _init_assessment_state() -> None:
         "type_answers": {},
         "type_tiebreak_answers": {},
         "type_tiebreak_pair": None,
+        "type_reconfirm_center": None,
+        "type_reconfirm_answers": {},
+        "type_reconfirm_tiebreak_answers": {},
+        "type_reconfirm_tiebreak_pair": None,
         "wing_answers": {},
         "instinct_answers": {},
         "episode_conflict": "",
@@ -126,6 +134,10 @@ def reset_assessment() -> None:
         "type_answers",
         "type_tiebreak_answers",
         "type_tiebreak_pair",
+        "type_reconfirm_center",
+        "type_reconfirm_answers",
+        "type_reconfirm_tiebreak_answers",
+        "type_reconfirm_tiebreak_pair",
         "wing_answers",
         "instinct_answers",
         "episode_conflict",
@@ -284,15 +296,28 @@ def _render_step2_center_tiebreak() -> None:
 
 def _preview_primary_type() -> int:
     """Estimate primary type after supplemental (70/30) for wing step."""
-    center = _resolved_center()
-    supplemental = gather_supplemental_type(_build_assessment_input())
-    return refine_primary_type_detailed(
-        center,
-        st.session_state.type_answers,
-        supplemental,
-        st.session_state.type_tiebreak_answers or None,
-        st.session_state.type_tiebreak_pair,
-    ).refined
+    data = _build_assessment_input()
+    resolved = resolve_final_center(data)
+    supplemental = gather_supplemental_type(data)
+    center = resolved.final_center
+    if resolved.center_changed and st.session_state.get("type_reconfirm_center") == center:
+        if st.session_state.get("type_reconfirm_answers"):
+            return refine_primary_type_detailed(
+                center,
+                st.session_state.type_reconfirm_answers,
+                supplemental,
+                st.session_state.type_reconfirm_tiebreak_answers or None,
+                st.session_state.type_reconfirm_tiebreak_pair,
+            ).refined
+    if not resolved.center_changed:
+        return refine_primary_type_detailed(
+            center,
+            st.session_state.type_answers,
+            supplemental,
+            st.session_state.type_tiebreak_answers or None,
+            st.session_state.type_tiebreak_pair,
+        ).refined
+    return refine_type_from_supplemental_only(center, supplemental).refined
 
 
 def _render_step3_type() -> None:
@@ -429,7 +454,54 @@ def _render_step5_supplemental() -> None:
             )
 
 
-def _render_step6_wing() -> None:
+def _render_step6_type_reconfirm() -> None:
+    center = st.session_state.type_reconfirm_center
+    if not center:
+        st.warning("タイプ再確認は不要です。前のステップに戻ってください。")
+        return
+
+    resolved = resolve_final_center(_build_assessment_input())
+    st.markdown("### センター判定が変更されたため、タイプを再確認してください")
+    st.caption(
+        f"Step 2 では {CENTER_LABELS[resolved.type_answered_center]} の質問に回答しましたが、"
+        f"追加情報を反映すると {CENTER_LABELS[center]} が妥当と判断されました。"
+        f" {CENTER_LABELS[center]} 向けの17問に改めてお答えください。"
+    )
+    questions = get_type_questions(center)
+    st.session_state.type_reconfirm_answers = _render_questions_by_category(
+        questions,
+        st.session_state.type_reconfirm_answers,
+        "type_rc",
+    )
+
+
+def _render_step7_type_reconfirm_tiebreak() -> None:
+    pair = st.session_state.type_reconfirm_tiebreak_pair
+    center = st.session_state.type_reconfirm_center
+    if not pair or not center:
+        st.warning("追加判定は不要です。前のステップに戻ってください。")
+        return
+
+    base = analyze_type_base(center, st.session_state.type_reconfirm_answers)
+    total = sum(base.totals.values()) or 1.0
+    parts = " / ".join(
+        f"タイプ{t} {base.totals.get(t, 0) / total:.0%}"
+        for t in sorted(base.totals.keys())
+    )
+    a, b = pair
+    st.markdown("### タイプ再確認が接戦のため、追加の5問にお答えください")
+    st.caption(
+        f"再確認の結果: {parts} — タイプ {a} vs タイプ {b} を判別します"
+    )
+    questions = get_type_tiebreak_questions(center, pair)
+    st.session_state.type_reconfirm_tiebreak_answers = _render_questions_by_category(
+        questions,
+        st.session_state.type_reconfirm_tiebreak_answers,
+        "type_rc_tb",
+    )
+
+
+def _render_step8_wing() -> None:
     primary_type = _preview_primary_type()
     if st.session_state.wing_for_type != primary_type:
         st.session_state.wing_for_type = primary_type
@@ -448,7 +520,7 @@ def _render_step6_wing() -> None:
     )
 
 
-def _render_step7_instinct() -> None:
+def _render_step9_instinct() -> None:
     st.markdown("### 本能サブタイプ（sp / so / sx）")
     st.caption("12問 — 安全・役割・親密、どれを優先するか")
     st.session_state.instinct_answers = _render_questions_by_category(
@@ -466,6 +538,10 @@ def _build_assessment_input() -> AssessmentInput:
         type_answers=st.session_state.type_answers,
         type_tiebreak_answers=st.session_state.type_tiebreak_answers,
         type_tiebreak_pair=st.session_state.type_tiebreak_pair,
+        type_reconfirm_center=st.session_state.type_reconfirm_center,
+        type_reconfirm_answers=st.session_state.type_reconfirm_answers,
+        type_reconfirm_tiebreak_answers=st.session_state.type_reconfirm_tiebreak_answers,
+        type_reconfirm_tiebreak_pair=st.session_state.type_reconfirm_tiebreak_pair,
         wing_answers=st.session_state.wing_answers,
         instinct_answers=st.session_state.instinct_answers,
         episodes=EpisodeInput(
@@ -513,11 +589,28 @@ def _validate_current_step(step: int) -> list[str]:
     elif step == 5:
         pass
     elif step == 6:
+        center = st.session_state.type_reconfirm_center
+        if not center:
+            return ["タイプ再確認は不要です。"]
+        questions = get_type_questions(center)
+        if not _questions_complete(questions, st.session_state.type_reconfirm_answers):
+            return ["すべてのタイプ再確認の質問に回答してください。"]
+    elif step == 7:
+        pair = st.session_state.type_reconfirm_tiebreak_pair
+        center = st.session_state.type_reconfirm_center
+        if not pair or not center:
+            return ["タイプ再確認の追加判定は不要です。"]
+        questions = get_type_tiebreak_questions(center, pair)
+        if not _questions_complete(
+            questions, st.session_state.type_reconfirm_tiebreak_answers
+        ):
+            return ["すべてのタイプ再確認追加判定の質問に回答してください。"]
+    elif step == 8:
         primary_type = _preview_primary_type()
         questions = get_wing_questions(primary_type)
         if not _questions_complete(questions, st.session_state.wing_answers):
             return ["すべてのウイング判定の質問に回答してください。"]
-    elif step == 7:
+    elif step == 9:
         if not _questions_complete(INSTINCT_QUESTIONS, st.session_state.instinct_answers):
             return ["すべての本能判定の質問に回答してください。"]
     return []
@@ -534,6 +627,18 @@ def _render_results() -> None:
     st.markdown(
         f"**本能サブタイプ:** {INSTINCT_LABELS.get(profile.instinctual_variant, profile.instinctual_variant)}"
     )
+    if profile.type_confidence > 0:
+        st.markdown(f"**タイプ判定信頼度:** {profile.type_confidence:.0%}")
+    if profile.type_low_confidence:
+        st.warning(
+            "タイプ判定の信頼度がやや低めです。"
+            "結果がしっくりこない場合は、時間を置いて再診断することをおすすめします。"
+        )
+    if profile.type_supplemental_only:
+        st.warning(
+            "センター判定が変更されたため、タイプは補足データ中心の参考値です。"
+            "次回は Step 2c のタイプ再確認まで完了すると精度が上がります。"
+        )
 
     if profile.reasoning:
         st.markdown("### 判定の根拠")
@@ -645,9 +750,13 @@ def render_enneagram_assessment() -> None:
     elif step == 5:
         _render_step5_supplemental()
     elif step == 6:
-        _render_step6_wing()
+        _render_step6_type_reconfirm()
     elif step == 7:
-        _render_step7_instinct()
+        _render_step7_type_reconfirm_tiebreak()
+    elif step == 8:
+        _render_step8_wing()
+    elif step == 9:
+        _render_step9_instinct()
 
     st.divider()
     nav_prev, nav_mid, nav_next = st.columns([1, 2, 1])
@@ -658,6 +767,15 @@ def render_enneagram_assessment() -> None:
                 st.session_state.assessment_step = 1
             elif step == 5 and not st.session_state.get("type_tiebreak_pair"):
                 st.session_state.assessment_step = 3
+            elif step == 8 and not st.session_state.get("type_reconfirm_tiebreak_pair"):
+                if st.session_state.get("type_reconfirm_center"):
+                    st.session_state.assessment_step = 6
+                elif not st.session_state.get("type_tiebreak_pair"):
+                    st.session_state.assessment_step = 5 if st.session_state.get("center_tiebreak_pair") else 3
+                else:
+                    st.session_state.assessment_step = 5
+            elif step == 7:
+                st.session_state.assessment_step = 6
             elif step == 2:
                 st.session_state.assessment_step = 1
             else:
@@ -704,11 +822,51 @@ def render_enneagram_assessment() -> None:
                     elif step == 4:
                         st.session_state.assessment_step = 5
                     elif step == 5:
+                        resolved = resolve_final_center(_build_assessment_input())
+                        if resolved.center_changed:
+                            st.session_state.type_reconfirm_center = resolved.final_center
+                            st.session_state.type_reconfirm_answers = {}
+                            st.session_state.type_reconfirm_tiebreak_pair = None
+                            st.session_state.type_reconfirm_tiebreak_answers = {}
+                            st.session_state.assessment_step = 6
+                        else:
+                            st.session_state.type_reconfirm_center = None
+                            st.session_state.type_reconfirm_answers = {}
+                            st.session_state.type_reconfirm_tiebreak_pair = None
+                            st.session_state.type_reconfirm_tiebreak_answers = {}
+                            primary_type = _preview_primary_type()
+                            if st.session_state.wing_for_type != primary_type:
+                                st.session_state.wing_for_type = primary_type
+                                st.session_state.wing_answers = {}
+                            st.session_state.assessment_step = 8
+                    elif step == 6:
+                        center = st.session_state.type_reconfirm_center
+                        assert center is not None
+                        type_base = analyze_type_base(
+                            center, st.session_state.type_reconfirm_answers
+                        )
+                        if type_base.borderline:
+                            st.session_state.type_reconfirm_tiebreak_pair = (
+                                type_base.tiebreak_pair
+                            )
+                            st.session_state.type_reconfirm_tiebreak_answers = {}
+                            st.session_state.assessment_step = 7
+                        else:
+                            st.session_state.type_reconfirm_tiebreak_pair = None
+                            st.session_state.type_reconfirm_tiebreak_answers = {}
+                            primary_type = _preview_primary_type()
+                            if st.session_state.wing_for_type != primary_type:
+                                st.session_state.wing_for_type = primary_type
+                                st.session_state.wing_answers = {}
+                            st.session_state.assessment_step = 8
+                    elif step == 7:
                         primary_type = _preview_primary_type()
                         if st.session_state.wing_for_type != primary_type:
                             st.session_state.wing_for_type = primary_type
                             st.session_state.wing_answers = {}
-                        st.session_state.assessment_step = 6
+                        st.session_state.assessment_step = 8
+                    elif step == 8:
+                        st.session_state.assessment_step = 9
                     else:
                         st.session_state.assessment_step += 1
                     st.rerun()

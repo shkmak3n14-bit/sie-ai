@@ -19,6 +19,7 @@ from sie.enneagram.types import CENTER_TYPES, Center, wing_types
 
 CENTER_BORDERLINE_GAP_RATIO = 0.15
 TYPE_BORDERLINE_GAP_RATIO = 0.15
+TYPE_LOW_CONFIDENCE_THRESHOLD = 0.55
 CENTER_QUESTION_WEIGHT = 0.7
 CENTER_SUPPLEMENTAL_WEIGHT = 0.3
 TYPE_QUESTION_WEIGHT = 0.7
@@ -166,6 +167,65 @@ def refine_center_with_supplemental(
         supplemental_totals=supplemental_totals,
         adjusted=adjusted,
         supplemental_suggested=None,
+    )
+
+
+@dataclass(frozen=True)
+class ResolvedCenter:
+    """Center after Phase C supplemental merge and Phase D cross-check."""
+
+    type_answered_center: Center
+    final_center: Center
+    center_changed: bool
+    refined_center: RefinedCenterResult
+    cross_center: "CrossCenterAnalysis"
+    cross_adjusted: bool
+
+
+def resolve_final_center(data: AssessmentInput) -> ResolvedCenter:
+    """Run Phase C/D center pipeline for UI preview and assessment."""
+    from sie.enneagram.center_crosscheck import (
+        CrossCenterAnalysis,
+        analyze_cross_center_alignment,
+        apply_cross_center_adjustment,
+    )
+
+    question_analysis = analyze_center_final(
+        data.center_answers,
+        data.center_tiebreak_answers or None,
+        data.center_tiebreak_pair,
+    )
+    type_answered_center = question_analysis.center
+    supplemental_center = score_supplemental_center(data)
+    refined = refine_center_with_supplemental(question_analysis, supplemental_center)
+    center = refined.center
+
+    supplemental_type = gather_supplemental_type(data)
+    cross = analyze_cross_center_alignment(
+        selected_center=center,
+        type_answered_center=type_answered_center,
+        type_answers=data.type_answers,
+        supplemental_type=supplemental_type,
+        type_tiebreak_answers=data.type_tiebreak_answers or None,
+        type_tiebreak_pair=data.type_tiebreak_pair,
+    )
+    cross_adjusted = False
+    adjusted_center, cross_adjusted = apply_cross_center_adjustment(
+        current_center=center,
+        center_confidence=refined.confidence,
+        cross=cross,
+        already_adjusted_by_supplemental=refined.adjusted,
+    )
+    if cross_adjusted:
+        center = adjusted_center
+
+    return ResolvedCenter(
+        type_answered_center=type_answered_center,
+        final_center=center,
+        center_changed=(center != type_answered_center),
+        refined_center=refined,
+        cross_center=cross,
+        cross_adjusted=cross_adjusted,
     )
 
 
@@ -692,9 +752,34 @@ def merge_type_scores_weighted(
 class RefinedTypeResult:
     refined: int
     question_primary: int
+    question_totals: dict[int, float]
+    question_confidence: float
     merged_totals: dict[int, float]
     confidence: float
     adjusted: bool
+    borderline: bool = False
+
+
+def refine_type_from_supplemental_only(
+    center: Center,
+    supplemental: dict[int, float],
+) -> RefinedTypeResult:
+    """Estimate primary type from supplemental data when Step 2 answers do not apply."""
+    types_in = CENTER_TYPES[center]
+    merged = {t: supplemental.get(t, 0.0) for t in types_in}
+    total = sum(merged.values()) or 1.0
+    refined = max(types_in, key=lambda t: merged.get(t, 0.0))
+    confidence = merged.get(refined, 0.0) / total if total > 0 else 0.0
+    return RefinedTypeResult(
+        refined=refined,
+        question_primary=refined,
+        question_totals={t: 0.0 for t in types_in},
+        question_confidence=0.0,
+        merged_totals=merged,
+        confidence=confidence,
+        adjusted=False,
+        borderline=True,
+    )
 
 
 def gather_supplemental_type(data: AssessmentInput) -> dict[int, float]:
@@ -737,6 +822,10 @@ def refine_primary_type_detailed(
     else:
         question_primary = max(question_totals, key=question_totals.get)
 
+    q_total = sum(question_totals.values()) or 1.0
+    question_confidence = question_totals.get(question_primary, 0.0) / q_total
+    type_base = analyze_type_base(center, type_answers)
+
     merged = merge_type_scores_weighted(question_totals, supplemental, center)
     if not merged:
         refined = question_primary
@@ -750,9 +839,12 @@ def refine_primary_type_detailed(
     return RefinedTypeResult(
         refined=refined,
         question_primary=question_primary,
+        question_totals=dict(question_totals),
+        question_confidence=question_confidence,
         merged_totals=merged,
         confidence=confidence,
         adjusted=adjusted,
+        borderline=type_base.borderline,
     )
 
 

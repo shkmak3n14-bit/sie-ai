@@ -40,3 +40,10 @@ class EnneagramProfile:
     childhood_wound: str | None
     episode_samples: list[EpisodeSample]
     reasoning: list[str] = field(default_factory=list)
+
+    type_confidence: float = 0.0
+    type_question_confidence: float = 0.0
+    type_low_confidence: bool = False
+    center_changed_for_type: bool = False
+    type_reconfirmed: bool = False
+    type_supplemental_only: bool = False

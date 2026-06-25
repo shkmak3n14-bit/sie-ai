@@ -44,6 +44,10 @@ class AssessmentInput:
     type_answers: dict[str, int] = field(default_factory=dict)
     type_tiebreak_answers: dict[str, int] = field(default_factory=dict)
     type_tiebreak_pair: tuple[int, int] | None = None
+    type_reconfirm_center: Center | None = None
+    type_reconfirm_answers: dict[str, int] = field(default_factory=dict)
+    type_reconfirm_tiebreak_answers: dict[str, int] = field(default_factory=dict)
+    type_reconfirm_tiebreak_pair: tuple[int, int] | None = None
     wing_answers: dict[str, int] = field(default_factory=dict)
     instinct_answers: dict[str, int] = field(default_factory=dict)
 

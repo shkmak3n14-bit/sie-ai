@@ -34,11 +34,18 @@ def build_reasoning(
     cross_center: CrossCenterAnalysis | None,
     cross_center_adjusted: bool,
     type_answered_center: Center,
+    center_changed_for_type: bool,
+    type_reconfirmed: bool,
+    type_supplemental_only: bool,
     type_tiebreak_used: bool,
     type_tiebreak_pair: tuple[int, int] | None,
+    type_reconfirm_tiebreak_used: bool,
+    type_reconfirm_tiebreak_pair: tuple[int, int] | None,
     question_primary: int,
     refined_primary: int,
     type_confidence: float,
+    type_question_confidence: float,
+    type_question_totals: dict[int, float],
     type_adjusted_by_supplemental: bool,
     type_totals_in_center: dict[int, float],
     supplemental_type: dict[int, float],
@@ -111,10 +118,39 @@ def build_reasoning(
 
     type_in_center_total = sum(type_totals_in_center.values()) or 1.0
     type_conf_pct = f"{type_confidence:.0%}"
+    type_q_conf_pct = f"{type_question_confidence:.0%}"
     type_parts = " · ".join(
         f"タイプ{t} {_pct(v, type_in_center_total)}"
         for t, v in sorted(type_totals_in_center.items())
     )
+
+    if type_question_totals and any(v > 0 for v in type_question_totals.values()):
+        q_total = sum(type_question_totals.values()) or 1.0
+        q_parts = " · ".join(
+            f"タイプ{t} {_pct(v, q_total)}"
+            for t, v in sorted(type_question_totals.items())
+            if v > 0 or t in CENTER_TYPES[center]
+        )
+        lines.append(
+            f"【Step 2 質問回答】センター内得点: {q_parts}（質問のみの信頼度 {type_q_conf_pct}）。"
+        )
+
+    if center_changed_for_type:
+        lines.append(
+            f"【タイプ注意（センター変更）】Step 2 のタイプ質問は "
+            f"{CENTER_LABELS[type_answered_center]} 向けでしたが、"
+            f"補足データ等を反映し最終センターは {CENTER_LABELS[center]} となりました。"
+        )
+        if type_reconfirmed:
+            lines.append(
+                f"【タイプ再確認】{CENTER_LABELS[center]} 向けの追加質問でタイプを再判定しました。"
+            )
+        elif type_supplemental_only:
+            lines.append(
+                "【タイプ参考】センター変更後のタイプ質問が未回答のため、"
+                "補足データのみから推定しています。信頼度は低めです。"
+            )
+
     if type_adjusted_by_supplemental and question_primary != refined_primary:
         lines.append(
             f"【Step 2 タイプ（センター内）】質問回答ではタイプ {question_primary} が最高でしたが、"
@@ -137,7 +173,13 @@ def build_reasoning(
             f"【Step 2b タイプ追加判定】タイプ {a} とタイプ {b} が接戦だったため、"
             f"追加5問で判別しました。"
         )
-    elif type_confidence < 0.55:
+    elif type_reconfirm_tiebreak_used and type_reconfirm_tiebreak_pair:
+        a, b = type_reconfirm_tiebreak_pair
+        lines.append(
+            f"【タイプ再確認 追加判定】タイプ {a} とタイプ {b} が接戦だったため、"
+            f"追加5問で判別しました。"
+        )
+    elif type_confidence < 0.55 or type_supplemental_only:
         lines.append(
             "【タイプ判定】センター内の得点差が小さく、タイプ判定の信頼度はやや低めです。"
             "結果がしっくりこない場合は、時間を置いて再診断することをおすすめします。"

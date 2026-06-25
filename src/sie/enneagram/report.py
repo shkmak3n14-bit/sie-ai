@@ -21,6 +21,11 @@ def format_report_plain(profile: EnneagramProfile) -> str:
     type_info = get_type_info(profile.primary_type)
     instinct = INSTINCT_LABELS.get(profile.instinctual_variant, profile.instinctual_variant)
     wing_line = f"ウイング: タイプ {profile.wing}\n" if profile.wing else ""
+    confidence_line = (
+        f"タイプ判定信頼度: {profile.type_confidence:.0%}\n"
+        if profile.type_confidence > 0
+        else ""
+    )
 
     scores = " / ".join(
         f"タイプ{t} {profile.scores.get(t, 0):.0%}" for t in range(1, 10)
@@ -32,6 +37,7 @@ def format_report_plain(profile: EnneagramProfile) -> str:
         "",
         type_info.name,
         wing_line.rstrip(),
+        confidence_line.rstrip(),
         f"本能サブタイプ: {instinct}",
         "",
         "【概要】",
