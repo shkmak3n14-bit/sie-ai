@@ -36,10 +36,11 @@ def _base_profile(**overrides) -> EnneagramProfile:
 
 
 def test_all_requested_templates_exist() -> None:
-    assert set(WING_TEMPLATES) == {"7w8", "8w7", "4w3"}
+    assert set(WING_TEMPLATES) == {"2w1", "7w6", "7w8", "8w7", "4w3"}
 
 
 def test_wing_type_code() -> None:
+    assert wing_type_code(2, 1) == "2w1"
     assert wing_type_code(8, 7) == "8w7"
     assert wing_type_code(7, 8) == "7w8"
     assert wing_type_code(4, 3) == "4w3"
@@ -69,6 +70,42 @@ def test_core_phase_includes_wing_template() -> None:
     assert "力 × 現実 × 責任" in instruction
     assert "判断基準" in instruction
     assert "推論ルール" in instruction
+
+
+def test_7w6_fukumoto_template() -> None:
+    template = get_wing_template(7, 6)
+    assert template is not None
+    assert template.model_name == "Fukumoto-Style_7w6"
+    assert template.label == "刺激 × 楽観 × 忠誠"
+    assert "退屈より刺激を優先する" in template.decision_criteria["stimulus_priority"]
+    assert "likes" in template.value_profile_structured
+    assert "退屈・停滞" in template.value_profile_structured["dislikes"]
+
+    session = Session.create()
+    session.enneagram = _base_profile(primary_type=7, wing=6)
+    session.phase = ConversationPhase.CORE
+    instruction = get_enneagram_instruction(session)
+    assert instruction is not None
+    assert "7w6" in instruction
+    assert "Fukumoto-Style_7w6" in instruction
+    assert "好む" in instruction
+    assert "刺激で上書き" in instruction
+
+    report = format_report_plain(_base_profile(primary_type=7, wing=6))
+    assert "Fukumoto-Style_7w6" in report
+    assert "尊敬する" in report
+
+
+def test_2w1_template_in_instruction() -> None:
+    session = Session.create()
+    session.enneagram = _base_profile(primary_type=2, wing=1)
+    session.phase = ConversationPhase.CORE
+
+    instruction = get_enneagram_instruction(session)
+    assert instruction is not None
+    assert "2w1" in instruction
+    assert "献身 × 義務 × 過剰な救済欲求" in instruction
+    assert "救うための暴力" in instruction
 
 
 def test_4w3_template_in_instruction() -> None:

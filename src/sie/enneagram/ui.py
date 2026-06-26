@@ -692,20 +692,40 @@ def _render_results() -> None:
 
     wing_template = get_wing_template(profile.primary_type, profile.wing)
     if wing_template:
+        caption = f"タイプ {wing_template.type} の人格テンプレート"
+        if wing_template.model_name:
+            caption += f" — {wing_template.model_name}"
         st.markdown(f"### ウイング人格 — {wing_template.label}")
-        st.caption(f"タイプ {wing_template.type} の人格テンプレート")
-        st.markdown("**判断基準**")
-        for item in wing_template.judgment_criteria:
-            st.markdown(f"- {item}")
-        st.markdown("**推論ルール**")
-        for item in wing_template.inference_rules:
-            st.markdown(f"- {item}")
-        st.markdown("**行動原理**")
-        for item in wing_template.behavior_principles:
-            st.markdown(f"- {item}")
-        st.markdown("**価値プロフィール**")
-        for item in wing_template.value_profile:
-            st.markdown(f"- {item}")
+        st.caption(caption)
+        if wing_template.decision_criteria:
+            st.markdown("**判断基準**")
+            for item in wing_template.decision_criteria.values():
+                st.markdown(f"- {item}")
+            st.markdown("**推論ルール**")
+            for item in (wing_template.inference_rules_map or {}).values():
+                st.markdown(f"- {item}")
+            st.markdown("**行動原理**")
+            for item in (wing_template.behavioral_principles or {}).values():
+                st.markdown(f"- {item}")
+            st.markdown("**価値プロフィール**")
+            for key, items in (wing_template.value_profile_structured or {}).items():
+                label = {"likes": "好む", "dislikes": "嫌う", "respects": "尊敬する", "contempts": "軽蔑する"}.get(key, key)
+                st.markdown(f"*{label}*")
+                for item in items:
+                    st.markdown(f"- {item}")
+        else:
+            st.markdown("**判断基準**")
+            for item in wing_template.judgment_criteria:
+                st.markdown(f"- {item}")
+            st.markdown("**推論ルール**")
+            for item in wing_template.inference_rules:
+                st.markdown(f"- {item}")
+            st.markdown("**行動原理**")
+            for item in wing_template.behavior_principles:
+                st.markdown(f"- {item}")
+            st.markdown("**価値プロフィール**")
+            for item in wing_template.value_profile:
+                st.markdown(f"- {item}")
 
     st.markdown("**タイプ別スコア（参考）**")
     st.caption("補足データを含めた参考値です。ウイング判定とは別の指標です。")

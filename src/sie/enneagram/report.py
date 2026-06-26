@@ -5,7 +5,7 @@ from __future__ import annotations
 from sie.enneagram.confidence import format_confidence_lines, low_confidence_messages
 from sie.enneagram.profile import EnneagramProfile
 from sie.enneagram.types import get_type_info
-from sie.enneagram.wing_templates import format_wing_template_report, get_wing_template
+from sie.enneagram.wing_templates import format_wing_template_report, format_wing_template_html, get_wing_template
 
 INSTINCT_LABELS = {
     "sp": "自己保存（sp）",
@@ -131,20 +131,7 @@ def format_report_html(profile: EnneagramProfile) -> str:
     wing_template = get_wing_template(profile.primary_type, profile.wing)
     wing_template_html = ""
     if wing_template:
-
-        def lis_tuple(items: tuple[str, ...]) -> str:
-            return "".join(f"<li>{item}</li>" for item in items)
-
-        wing_template_html = f"""\
-  <h3>ウイング人格: {wing_template.type} — {wing_template.label}</h3>
-  <h4>判断基準</h4>
-  <ul>{lis_tuple(wing_template.judgment_criteria)}</ul>
-  <h4>推論ルール</h4>
-  <ul>{lis_tuple(wing_template.inference_rules)}</ul>
-  <h4>行動原理</h4>
-  <ul>{lis_tuple(wing_template.behavior_principles)}</ul>
-  <h4>価値プロフィール</h4>
-  <ul>{lis_tuple(wing_template.value_profile)}</ul>"""
+        wing_template_html = format_wing_template_html(wing_template)
 
     scores_html = " · ".join(
         f"タイプ{t} {profile.scores.get(t, 0):.0%}" for t in range(1, 10)
