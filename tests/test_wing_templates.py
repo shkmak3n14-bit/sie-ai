@@ -37,13 +37,14 @@ def _base_profile(**overrides) -> EnneagramProfile:
 
 def test_all_requested_templates_exist() -> None:
     assert set(WING_TEMPLATES) == {
-        "1w2", "2w1", "3w2", "3w4", "5w4", "7w6", "7w8", "8w7", "4w3", "4w5",
+        "1w2", "2w1", "2w3", "3w2", "3w4", "5w4", "7w6", "7w8", "8w7", "4w3", "4w5",
     }
 
 
 def test_wing_type_code() -> None:
     assert wing_type_code(1, 2) == "1w2"
     assert wing_type_code(2, 1) == "2w1"
+    assert wing_type_code(2, 3) == "2w3"
     assert wing_type_code(8, 7) == "8w7"
     assert wing_type_code(7, 8) == "7w8"
     assert wing_type_code(4, 3) == "4w3"
@@ -165,6 +166,23 @@ def test_1w2_template_in_instruction() -> None:
     report = format_report_plain(_base_profile(primary_type=1, wing=2))
     assert "1w2" in report
     assert "継承の義務" in report
+
+
+def test_2w3_template_in_instruction() -> None:
+    session = Session.create()
+    session.enneagram = _base_profile(primary_type=2, wing=3)
+    session.phase = ConversationPhase.CORE
+
+    instruction = get_enneagram_instruction(session)
+    assert instruction is not None
+    assert "2w3" in instruction
+    assert "献身 × 適応 × 救済" in instruction
+    assert "適応的再構築" in instruction
+    assert "自己犠牲の美徳" in instruction
+
+    report = format_report_plain(_base_profile(primary_type=2, wing=3))
+    assert "2w3" in report
+    assert "関係の修復と調和" in report
 
 
 def test_2w1_template_in_instruction() -> None:
