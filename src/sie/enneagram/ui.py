@@ -29,6 +29,7 @@ from sie.enneagram.scoring import (
 from sie.enneagram.type_tiebreak_questions import get_type_tiebreak_questions
 from sie.enneagram.types import Center, get_type_info, wing_types
 from sie.enneagram.wing_questions import get_wing_questions
+from sie.enneagram.wing_templates import get_wing_template
 from sie.enneagram.center_tiebreak_questions import get_center_tiebreak_questions
 
 TOTAL_STEPS = 9
@@ -71,6 +72,7 @@ CATEGORY_LABELS = {
     "core_fear": "コア恐れ",
     "core_desire": "コア欲求",
     "type_tiebreak": "タイプ追加判別",
+    "anger_pattern": "怒りのパターン（8 vs 9 / 8w7 vs 8w9）",
 }
 
 CENTER_LABELS = {
@@ -325,7 +327,15 @@ def _render_step3_type() -> None:
     center = _resolved_center()
     questions = get_type_questions(center)
     st.markdown(f"### {CENTER_LABELS[center]}")
-    st.caption("17問 — 動機・恐れ・欲求・行動パターン（9問）＋ コア恐れ・欲求（8問）")
+    if center == Center.BODY:
+        st.caption(
+            "20問 — 動機・恐れ・欲求・行動（9問）＋ コア恐れ・欲求（8問）"
+            " ＋ 怒りのパターン（3問）"
+        )
+    else:
+        st.caption(
+            "17問 — 動機・恐れ・欲求・行動パターン（9問）＋ コア恐れ・欲求（8問）"
+        )
     st.session_state.type_answers = _render_questions_by_category(
         questions,
         st.session_state.type_answers,
@@ -625,6 +635,11 @@ def _render_results() -> None:
     st.markdown(f"## {type_info.name}")
     if profile.wing:
         st.markdown(f"**ウイング:** タイプ {profile.wing}")
+        wing_template = get_wing_template(profile.primary_type, profile.wing)
+        if wing_template:
+            st.markdown(
+                f"**ウイング人格:** {wing_template.type} — {wing_template.label}"
+            )
     st.markdown(
         f"**本能サブタイプ:** {INSTINCT_LABELS.get(profile.instinctual_variant, profile.instinctual_variant)}"
     )
@@ -674,6 +689,23 @@ def _render_results() -> None:
     if profile.childhood_wound:
         st.markdown("**幼少期の傷（傾向）**")
         st.markdown(profile.childhood_wound)
+
+    wing_template = get_wing_template(profile.primary_type, profile.wing)
+    if wing_template:
+        st.markdown(f"### ウイング人格 — {wing_template.label}")
+        st.caption(f"タイプ {wing_template.type} の人格テンプレート")
+        st.markdown("**判断基準**")
+        for item in wing_template.judgment_criteria:
+            st.markdown(f"- {item}")
+        st.markdown("**推論ルール**")
+        for item in wing_template.inference_rules:
+            st.markdown(f"- {item}")
+        st.markdown("**行動原理**")
+        for item in wing_template.behavior_principles:
+            st.markdown(f"- {item}")
+        st.markdown("**価値プロフィール**")
+        for item in wing_template.value_profile:
+            st.markdown(f"- {item}")
 
     st.markdown("**タイプ別スコア（参考）**")
     st.caption("補足データを含めた参考値です。ウイング判定とは別の指標です。")

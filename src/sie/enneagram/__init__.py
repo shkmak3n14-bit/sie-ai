@@ -4,6 +4,7 @@ from sie.enneagram.assess import run_assessment, validate_input
 from sie.enneagram.context import get_enneagram_instruction
 from sie.enneagram.inputs import AssessmentInput, BehaviorLog, EpisodeInput, SelfOtherGap
 from sie.enneagram.profile import EnneagramProfile, EpisodeSample, InstinctualVariant
+from sie.enneagram.wing_templates import get_wing_template
 from sie.enneagram.questions import (
     CENTER_QUESTIONS,
     INSTINCT_QUESTIONS,
@@ -30,6 +31,7 @@ __all__ = [
     "get_wing_questions",
     "get_enneagram_instruction",
     "get_type_info",
+    "get_wing_template",
     "get_type_questions",
     "run_assessment",
     "validate_input",

@@ -224,8 +224,13 @@ def run_assessment(data: AssessmentInput) -> EnneagramProfile:
         )
     )
 
+    effective_type_answers = (
+        data.type_reconfirm_answers
+        if type_reconfirmed
+        else data.type_answers
+    )
     wing, wing_low, wing_high, wing_totals = score_wing_detail(
-        primary_type, data.wing_answers
+        primary_type, data.wing_answers, effective_type_answers
     )
     wing_confidence, wing_shares = wing_confidence_detail(
         wing_low, wing_high, wing_totals

@@ -451,6 +451,7 @@ def score_type_in_center(
 def score_wing_detail(
     primary_type: int,
     answers: dict[str, int],
+    type_answers: dict[str, int] | None = None,
 ) -> tuple[int, int, int, dict[str, float]]:
     """Return (chosen_wing, wing_low, wing_high, wing_low/high totals)."""
     wing_low, wing_high = wing_types(primary_type)
@@ -461,7 +462,13 @@ def score_wing_detail(
         "wing_low": totals_raw.get(str(wing_low), 0),
         "wing_high": totals_raw.get(str(wing_high), 0),
     }
-    if not totals_raw:
+    if primary_type == 8 and type_answers:
+        from sie.enneagram.body_anger_questions import score_body_anger_for_wing
+
+        for wing_num, score in score_body_anger_for_wing(type_answers).items():
+            key = "wing_low" if wing_num == wing_low else "wing_high"
+            totals[key] += score
+    if not totals_raw and not any(totals.values()):
         return wing_low, wing_low, wing_high, totals
     wing = wing_low if totals["wing_low"] >= totals["wing_high"] else wing_high
     return wing, wing_low, wing_high, totals

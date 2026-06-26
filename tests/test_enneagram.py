@@ -123,7 +123,7 @@ def test_question_counts() -> None:
     assert len(CENTER_QUESTIONS) == 15
     assert len(CENTER_CORE_QUESTIONS) == 8
     assert len(get_center_questions()) == 23
-    assert len(get_type_questions(Center.BODY)) == 17
+    assert len(get_type_questions(Center.BODY)) == 20
     assert len(get_type_questions(Center.HEART)) == 17
     assert len(get_type_questions(Center.HEAD)) == 17
     for primary in range(1, 10):

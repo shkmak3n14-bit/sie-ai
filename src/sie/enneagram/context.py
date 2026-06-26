@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from sie.enneagram.profile import EnneagramProfile
 from sie.enneagram.types import get_type_info
+from sie.enneagram.wing_templates import format_wing_template_instruction, get_wing_template
 from sie.flow import ConversationPhase
 from sie.session import Session
 
@@ -46,6 +47,13 @@ def _behavior_rules() -> str:
     )
 
 
+def _wing_template_block(profile: EnneagramProfile) -> str:
+    template = get_wing_template(profile.primary_type, profile.wing)
+    if template is None:
+        return ""
+    return format_wing_template_instruction(template) + "\n"
+
+
 def get_enneagram_instruction(session: Session) -> str | None:
     """Return phase-appropriate internal instruction, or None if no profile."""
     profile = session.enneagram
@@ -67,15 +75,18 @@ def get_enneagram_instruction(session: Session) -> str | None:
 
         return (
             f"[エニアグラム診断結果を核心フェーズで加味]\n{summary}{episodes}\n"
+            f"{_wing_template_block(profile)}"
             f"{rules} "
             "役割と気性の話と結びつけ、恐れ・欲求・盲点を相手のペースで静かに映す。"
         )
 
     if phase == ConversationPhase.EMPATHY:
+        wing_block = _wing_template_block(profile)
         return (
             f"[エニアグラム診断結果を寄り添いで加味]\n"
             f"コミュニケーション: {profile.communication_style}\n"
             f"関係で必要なもの: {', '.join(profile.relationship_needs)}。\n"
+            f"{wing_block}"
             f"{rules}"
         )
 
@@ -84,12 +95,15 @@ def get_enneagram_instruction(session: Session) -> str | None:
             f"[エニアグラム診断結果を導きで加味]\n"
             f"盲点: {', '.join(profile.blind_spots)}。\n"
             f"ストレス時タイプ{profile.stress_pattern}、成長時タイプ{profile.growth_pattern}。\n"
+            f"{_wing_template_block(profile)}"
             f"{rules} 自己理解から他者理解への橋渡しに活かす。"
         )
 
     if phase in (ConversationPhase.ONGOING, ConversationPhase.CLOSING):
         return (
-            f"[エニアグラム診断結果]\n{summary}\n{rules}"
+            f"[エニアグラム診断結果]\n{summary}\n"
+            f"{_wing_template_block(profile)}"
+            f"{rules}"
         )
 
     return None

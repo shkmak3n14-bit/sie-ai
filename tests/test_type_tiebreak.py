@@ -18,11 +18,23 @@ def _all_zeros(center: Center, value: int = 0) -> dict[str, int]:
     return {q.id: value for q in get_type_questions(center)}
 
 
-def test_borderline_type_detection_close_scores() -> None:
+def _borderline_body_type_answers() -> dict[str, int]:
+    """Balanced body type answers including anger-pattern questions."""
     type_answers = _all_zeros(Center.BODY, 0)
-    for i, q in enumerate(get_type_questions(Center.BODY)):
+    non_anger = [
+        q for q in get_type_questions(Center.BODY) if not q.id.startswith("ba_")
+    ]
+    for i, q in enumerate(non_anger):
         if i % 2 == 1:
             type_answers[q.id] = 1
+    for q in get_type_questions(Center.BODY):
+        if q.id.startswith("ba_"):
+            type_answers[q.id] = 2
+    return type_answers
+
+
+def test_borderline_type_detection_close_scores() -> None:
+    type_answers = _borderline_body_type_answers()
     analysis = analyze_type_base(Center.BODY, type_answers)
     assert analysis.borderline
     assert analysis.tiebreak_pair in ((8, 9), (8, 1), (9, 1))
@@ -37,10 +49,7 @@ def test_not_borderline_clear_type_winner() -> None:
 
 
 def test_type_tiebreak_resolves_pair() -> None:
-    type_answers = _all_zeros(Center.BODY, 0)
-    for i, q in enumerate(get_type_questions(Center.BODY)):
-        if i % 2 == 1:
-            type_answers[q.id] = 1
+    type_answers = _borderline_body_type_answers()
     base = analyze_type_base(Center.BODY, type_answers)
     pair = base.tiebreak_pair
     assert pair is not None
