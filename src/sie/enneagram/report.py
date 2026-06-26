@@ -5,6 +5,11 @@ from __future__ import annotations
 from sie.enneagram.confidence import format_confidence_lines, low_confidence_messages
 from sie.enneagram.profile import EnneagramProfile
 from sie.enneagram.types import get_type_info
+from sie.enneagram.saint_exupery_characters import (
+    format_character_html,
+    format_character_report,
+    get_saint_exupery_characters,
+)
 from sie.enneagram.wing_templates import format_wing_template_report, format_wing_template_html, get_wing_template
 
 INSTINCT_LABELS = {
@@ -79,6 +84,10 @@ def format_report_plain(profile: EnneagramProfile) -> str:
     if wing_template:
         lines.extend(["", *format_wing_template_report(wing_template)])
 
+    characters = get_saint_exupery_characters(profile.primary_type, profile.wing)
+    if characters:
+        lines.extend(["", *format_character_report(characters)])
+
     lines.extend(["", "【タイプ別スコア（参考）】", scores])
 
     if profile.reasoning:
@@ -133,6 +142,9 @@ def format_report_html(profile: EnneagramProfile) -> str:
     if wing_template:
         wing_template_html = format_wing_template_html(wing_template)
 
+    characters = get_saint_exupery_characters(profile.primary_type, profile.wing)
+    character_html = format_character_html(characters) if characters else ""
+
     scores_html = " · ".join(
         f"タイプ{t} {profile.scores.get(t, 0):.0%}" for t in range(1, 10)
     )
@@ -180,6 +192,7 @@ def format_report_html(profile: EnneagramProfile) -> str:
   <p><strong>成長時の型:</strong> タイプ {profile.growth_pattern}</p>
   {wound_html}
   {wing_template_html}
+  {character_html}
   {reasoning_html}
   <h3>タイプ別スコア（参考）</h3>
   <p>{scores_html}</p>

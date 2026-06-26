@@ -4,6 +4,10 @@ from __future__ import annotations
 
 from sie.enneagram.profile import EnneagramProfile
 from sie.enneagram.types import get_type_info
+from sie.enneagram.saint_exupery_characters import (
+    format_character_instruction,
+    get_saint_exupery_characters,
+)
 from sie.enneagram.wing_templates import format_wing_template_instruction, get_wing_template
 from sie.flow import ConversationPhase
 from sie.session import Session
@@ -54,6 +58,13 @@ def _wing_template_block(profile: EnneagramProfile) -> str:
     return format_wing_template_instruction(template) + "\n"
 
 
+def _character_archetype_block(profile: EnneagramProfile) -> str:
+    characters = get_saint_exupery_characters(profile.primary_type, profile.wing)
+    if not characters:
+        return ""
+    return format_character_instruction(characters) + "\n"
+
+
 def get_enneagram_instruction(session: Session) -> str | None:
     """Return phase-appropriate internal instruction, or None if no profile."""
     profile = session.enneagram
@@ -76,17 +87,18 @@ def get_enneagram_instruction(session: Session) -> str | None:
         return (
             f"[エニアグラム診断結果を核心フェーズで加味]\n{summary}{episodes}\n"
             f"{_wing_template_block(profile)}"
+            f"{_character_archetype_block(profile)}"
             f"{rules} "
             "役割と気性の話と結びつけ、恐れ・欲求・盲点を相手のペースで静かに映す。"
         )
 
     if phase == ConversationPhase.EMPATHY:
-        wing_block = _wing_template_block(profile)
         return (
             f"[エニアグラム診断結果を寄り添いで加味]\n"
             f"コミュニケーション: {profile.communication_style}\n"
             f"関係で必要なもの: {', '.join(profile.relationship_needs)}。\n"
-            f"{wing_block}"
+            f"{_wing_template_block(profile)}"
+            f"{_character_archetype_block(profile)}"
             f"{rules}"
         )
 
@@ -96,6 +108,7 @@ def get_enneagram_instruction(session: Session) -> str | None:
             f"盲点: {', '.join(profile.blind_spots)}。\n"
             f"ストレス時タイプ{profile.stress_pattern}、成長時タイプ{profile.growth_pattern}。\n"
             f"{_wing_template_block(profile)}"
+            f"{_character_archetype_block(profile)}"
             f"{rules} 自己理解から他者理解への橋渡しに活かす。"
         )
 
@@ -103,6 +116,7 @@ def get_enneagram_instruction(session: Session) -> str | None:
         return (
             f"[エニアグラム診断結果]\n{summary}\n"
             f"{_wing_template_block(profile)}"
+            f"{_character_archetype_block(profile)}"
             f"{rules}"
         )
 

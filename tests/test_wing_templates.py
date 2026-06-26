@@ -207,7 +207,17 @@ def test_4w5_deepsoul_template() -> None:
     assert "アーキタイプ拡張" in report
 
 
-def test_4w3_template_in_instruction() -> None:
+def test_4w3_saint_exupery_merged_template() -> None:
+    template = get_wing_template(4, 3)
+    assert template is not None
+    assert template.model_name == "Saint-Exupery_4w3_Profile"
+    assert template.label == "喪失 × 自意識 × 美学"
+    assert "本物か偽物か" in template.decision_criteria["inner_truth"]
+    assert "象徴化し、詩的な物語へ" in template.inference_rules_map["rule_2_pain_to_symbol"]
+    assert "深い共鳴" in template.behavioral_principles["principle_7_deep_resonance"]
+    assert "本物の感情" in template.value_profile_structured["core_values"]
+    assert "喪失の意味づけ" in template.value_profile_structured["desires"]
+
     session = Session.create()
     session.enneagram = _base_profile(primary_type=4, wing=3)
     session.phase = ConversationPhase.GUIDANCE
@@ -215,8 +225,10 @@ def test_4w3_template_in_instruction() -> None:
     instruction = get_enneagram_instruction(session)
     assert instruction is not None
     assert "4w3" in instruction
+    assert "Saint-Exupery_4w3_Profile" in instruction
     assert "喪失 × 自意識 × 美学" in instruction
     assert "本物の感情" in instruction
+    assert "寓話" in instruction
 
 
 def test_report_includes_wing_template() -> None:

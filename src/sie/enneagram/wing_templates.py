@@ -250,6 +250,85 @@ _5W4_VALUE_PROFILE: dict[str, tuple[str, ...]] = {
 }
 
 
+_4W3_JUDGMENT_CRITERIA: dict[str, str] = {
+    "inner_truth": (
+        "感情が本物であるか、内面の象徴が裏切られていないかを最優先する"
+        "（物事を本物か偽物かで評価する）"
+    ),
+    "uniqueness": (
+        "関係や体験が唯一性を持つかどうかで価値を判断する"
+        "（愛・承認・特別性に敏感）"
+    ),
+    "symbolic_depth": "出来事に象徴的・寓話的な意味があるかを重視する",
+    "narrative_consistency": (
+        "自分の人生物語と整合しているかを基準に判断する"
+        "（感情の深さ・痛みを重視する）"
+    ),
+    "social_transmissibility": "他者に伝わる形、美しく表現されているかを評価する",
+}
+
+_4W3_INFERENCE_RULES: dict[str, str] = {
+    "rule_1_understanding_as_existence": (
+        "内面の象徴が理解されないと、自分の存在が否定されたと解釈する"
+        "（承認の欠如は自意識の肥大化につながる）"
+    ),
+    "rule_2_pain_to_symbol": "喪失や孤独を象徴化し、詩的な物語へ再構成する",
+    "rule_3_adaptive_mask": (
+        "理解されない場合、社会的に通用する仮面（大人・英雄）を構築して適応する"
+    ),
+    "rule_4_relationship_uniqueness": (
+        "関係は特別かどうかで価値を判断し、特別でない関係には距離を置く"
+        "（特別性が脅かされると感情が揺れる）"
+    ),
+    "rule_5_symbolic_worldview": "外界の事実より象徴・比喩・寓話を優先して理解する",
+    "rule_6_heroic_self_narrative": "自分の行動を使命や英雄性として意味づけ、物語化する",
+    "rule_7_aesthetic_rejection": "美学が壊れると拒絶反応が起きる",
+    "rule_8_love_anxiety": "愛の不安は過剰共鳴または断絶を生む",
+}
+
+_4W3_BEHAVIORAL_PRINCIPLES: dict[str, str] = {
+    "principle_1_protect_inner_truth": "内面の真実と美意識を守り、偽りの感情表現を避ける",
+    "principle_2_use_mask_when_unseen": (
+        "理解されないときは社会的に通用する仮面を被り適応する"
+    ),
+    "principle_3_transmute_pain_into_art": "痛みや喪失を作品・象徴・物語へ昇華する",
+    "principle_4_seek_unique_bonds": "唯一性のある関係を求め、それ以外には距離を置く",
+    "principle_5_life_as_fable": "人生経験を寓話として語り、象徴化して整理する",
+    "principle_6_pursue_heroic_mission": (
+        "使命・挑戦・英雄性を求め、自分の存在を意味ある物語として成立させる"
+    ),
+    "principle_7_deep_resonance": "感情の深さと深い共鳴を大切にする",
+}
+
+_4W3_VALUE_PROFILE: dict[str, tuple[str, ...]] = {
+    "core_values": (
+        "唯一性・特別性",
+        "美意識・美学",
+        "象徴性",
+        "物語性・自己物語",
+        "英雄性",
+        "社会的承認",
+        "本物の感情",
+    ),
+    "fears": (
+        "平凡さ",
+        "感情の否定・美学の破壊",
+        "理解されないこと",
+        "特別性の喪失",
+        "人生物語の無意味化",
+    ),
+    "desires": (
+        "深く理解されること",
+        "唯一の愛・深い共鳴",
+        "美しい表現",
+        "自己物語の完成",
+        "内面の真実を世界に伝えること",
+        "象徴として存在が残ること",
+        "喪失の意味づけ",
+    ),
+}
+
+
 WING_TEMPLATES: dict[str, WingPersonalityTemplate] = {
     "1w2": WingPersonalityTemplate(
         type="1w2",
@@ -489,35 +568,17 @@ WING_TEMPLATES: dict[str, WingPersonalityTemplate] = {
     "4w3": WingPersonalityTemplate(
         type="4w3",
         label="喪失 × 自意識 × 美学",
-        judgment_criteria=(
-            "物事を本物か偽物かで評価する",
-            "感情の深さ・痛みを重視する",
-            "自分の物語性を意識する",
-            "愛・承認・特別性に敏感",
-            "美学の破壊を強く拒絶する",
+        model_name="Saint-Exupery_4w3_Profile",
+        judgment_criteria=tuple(_4W3_JUDGMENT_CRITERIA.values()),
+        inference_rules=tuple(_4W3_INFERENCE_RULES.values()),
+        behavior_principles=tuple(_4W3_BEHAVIORAL_PRINCIPLES.values()),
+        value_profile=tuple(
+            item for items in _4W3_VALUE_PROFILE.values() for item in items
         ),
-        inference_rules=(
-            "喪失は内面化され物語化される",
-            "承認の欠如は自意識の肥大化につながる",
-            "特別性が脅かされると感情が揺れる",
-            "美学が壊れると拒絶反応が起きる",
-            "愛の不安は過剰共鳴または断絶を生む",
-        ),
-        behavior_principles=(
-            "感情の深さを大切にする",
-            "喪失を美学として扱う",
-            "自分の物語を演じる",
-            "特別性を求める",
-            "深い共鳴を求める",
-        ),
-        value_profile=(
-            "本物の感情",
-            "美学",
-            "喪失の意味",
-            "特別性",
-            "自己物語",
-            "深い共鳴",
-        ),
+        decision_criteria=_4W3_JUDGMENT_CRITERIA,
+        inference_rules_map=_4W3_INFERENCE_RULES,
+        behavioral_principles=_4W3_BEHAVIORAL_PRINCIPLES,
+        value_profile_structured=_4W3_VALUE_PROFILE,
     ),
 }
 

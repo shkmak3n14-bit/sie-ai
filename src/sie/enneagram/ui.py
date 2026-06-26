@@ -29,6 +29,7 @@ from sie.enneagram.scoring import (
 from sie.enneagram.type_tiebreak_questions import get_type_tiebreak_questions
 from sie.enneagram.types import Center, get_type_info, wing_types
 from sie.enneagram.wing_questions import get_wing_questions
+from sie.enneagram.saint_exupery_characters import get_saint_exupery_characters
 from sie.enneagram.wing_templates import get_wing_template, value_profile_category_label
 from sie.enneagram.center_tiebreak_questions import get_center_tiebreak_questions
 
@@ -753,6 +754,21 @@ def _render_results() -> None:
             st.markdown("**価値プロフィール**")
             for item in wing_template.value_profile:
                 st.markdown(f"- {item}")
+
+    characters = get_saint_exupery_characters(profile.primary_type, profile.wing)
+    if characters:
+        st.markdown("### 星の王子さま模型 — タイプ3と4の分離")
+        st.caption("サン＝テグジュペリ作品に基づく、内面の4と外面の3の心理模型")
+        for char in characters:
+            st.markdown(f"**{char.name}**（{char.enneagram_type} / {char.subtype}）")
+            st.markdown(f"- 動機: {char.core_motivation}")
+            st.markdown(f"- 恐れ: {char.core_fear}")
+            st.markdown(f"- 欲求: {char.core_desire}")
+            st.markdown("- パターン:")
+            for pattern in char.patterns:
+                st.markdown(f"  - {pattern}")
+            st.markdown(f"- 物語上の役割: {char.narrative_role}")
+            st.markdown(f"- 作者との関係: {char.relation_to_author}")
 
     st.markdown("**タイプ別スコア（参考）**")
     st.caption("補足データを含めた参考値です。ウイング判定とは別の指標です。")
