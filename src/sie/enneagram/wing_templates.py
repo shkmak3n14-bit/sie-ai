@@ -44,6 +44,9 @@ _VALUE_PROFILE_LABELS: dict[str, str] = {
     "desires": "渇望",
     "fears": "恐れ",
     "love_style": "愛のスタイル",
+    "positive_values": "肯定的価値",
+    "shadow_values": "影の側面",
+    "profile_core": "根底の価値",
 }
 
 
@@ -329,6 +332,157 @@ _4W3_VALUE_PROFILE: dict[str, tuple[str, ...]] = {
 }
 
 
+_3W2_JUDGMENT_CRITERIA: dict[str, str] = {
+    "evaluation_and_success": (
+        "自分が有能・魅力的・頼れると評価されるかどうかを基準に判断する。"
+    ),
+    "likability_and_closeness": (
+        "人から好かれているか、距離が縮まっているかを重視する。"
+    ),
+    "impression_management": (
+        "その場で面白い・ノリが良い・魅力的に見えるかを常に意識する。"
+    ),
+    "energy_cost": "外での演技や気遣いによる疲労度を基準に行動量を調整する。",
+}
+
+_3W2_INFERENCE_RULES: dict[str, str] = {
+    "likability_equals_value": "好かれること＝自分の価値の証明と解釈する。",
+    "action_itself_is_success": "声をかける・動くこと自体が成果であるとみなす。",
+    "self_deprecation_as_charm": "欠点や奇行もユーモア化すれば魅力になると考える。",
+    "responsibility_as_reputation": (
+        "仕事をきちんとこなすことが評価と好意につながると推論する。"
+    ),
+    "adaptation_over_authenticity": "本心よりも相手に合わせた振る舞いを優先する。",
+}
+
+_3W2_BEHAVIORAL_PRINCIPLES: dict[str, str] = {
+    "performative_sociality": (
+        "社交の場では“ショーとしての自分”を演じ、積極的に声をかける。"
+    ),
+    "efficient_work_ethic": (
+        "仕事は効率的かつ真面目にこなし、周囲に迷惑をかけないようにする。"
+    ),
+    "external_full_power_internal_shutdown": (
+        "外では全力で気を使い、家では完全に電池切れになる。"
+    ),
+    "closeness_for_validation": (
+        "距離が近い相手との関係で承認を得ようとし、好意に弱い。"
+    ),
+    "avoid_conflict_seek_likability": (
+        "対立よりも好かれること・嫌われないことを優先する。"
+    ),
+}
+
+_3W2_VALUE_PROFILE: dict[str, tuple[str, ...]] = {
+    "positive_values": (
+        "有能・頼れる・魅力的であることに価値を置く。",
+        "後輩や周囲の役に立つことを重要視する。",
+        "場を盛り上げ、楽しい雰囲気を作ることを重視する。",
+        "仕事をきちんとこなし、効率的に成果を出すことを評価する。",
+    ),
+    "shadow_values": (
+        "演じる自分が強すぎて本心が曖昧になりやすい。",
+        "外での演技の反動で家では何もできなくなる。",
+        "好意を価値の証明として求め、身近な女性に手を出しやすい。",
+        "人間関係が“ショー化”し、深い安心感に繋がりにくい。",
+    ),
+    "profile_core": (
+        "好かれながら成果を出す自分でありたい。",
+        "役に立ち、魅力的であることで存在価値を証明したい。",
+        "素の自分・本心を見せることに不安を抱えやすい。",
+    ),
+}
+
+
+_3W4_JUDGMENT_CRITERIA: dict[str, str] = {
+    "affirmation_and_praise": (
+        "自分の価値が周囲から肯定・称賛されているか"
+        "（今の自分の価値が肯定されているか）"
+    ),
+    "special_treatment": (
+        "チーム内で自分が特別な存在として扱われているか"
+        "（自分の特別性が保たれているか）"
+    ),
+    "image_maintenance": (
+        "自分のイメージ（有能・先進的・頼れる）が維持されているか"
+        "（イメージが崩れないか）"
+    ),
+    "credit_without_responsibility": "責任を負わずに成果だけを確保できているか",
+    "deference_culture": (
+        "部下が自分に忖度し、自分基準で物事を考えているか"
+        "（周囲の忠誠が維持されているか）"
+    ),
+    "competitor_threat": (
+        "自分の立場や評価を脅かす存在がいないか（競争相手の有無）"
+        "（見捨てられるリスクがないか）"
+    ),
+}
+
+_3W4_INFERENCE_RULES: dict[str, str] = {
+    "criticism_as_attack": (
+        "批判や異議は『自分の価値への攻撃』として解釈される"
+        "（存在価値の否定として受け取る）"
+    ),
+    "monitor_subordinate_judgment": (
+        "部下の自発的な判断は『自分の評価を左右する要素』として監視対象になる"
+    ),
+    "capable_subordinate_as_rival": (
+        "部下の能力が高いほど『潜在的な競争相手』として警戒される"
+    ),
+    "team_credit_as_resource": (
+        "チームの成果は『自分の手柄として演出できる資源』とみなされる"
+        "（成功の演出は自己価値の補強として機能する）"
+    ),
+    "praise_as_special_proof": (
+        "称賛や感謝の言葉は『特別扱いされている証拠』として強く受け取られる"
+    ),
+    "ignore_unfairness_if_unaffected": (
+        "負担の偏りや不公平は『自分に直接の不利益がなければ問題ではない』と処理される"
+    ),
+    "loyalty_loss_as_abandonment": "忠誠の欠如は『見捨てられる前兆』とみなされる",
+    "trend_as_shortcut": "時流に乗ることは『最短で成功に到達する方法』とみなされる",
+}
+
+_3W4_BEHAVIORAL_PRINCIPLES: dict[str, str] = {
+    "chameleon_advantage": (
+        "接する相手によって態度や意見を変え、自分に有利な関係性を維持する"
+        "（カメレオン的適応）"
+    ),
+    "delegate_responsibility": "相談事は『部下同士で解決させる』ことで自分の責任を回避する",
+    "treat_all_as_rivals": "部下全員を競争相手とみなし、優位なポジションを維持しようとする",
+    "claim_subordinate_credit": (
+        "部下の新しい知識や成果（例：生成AIの知見）を自分の手柄としてチームに提示する"
+    ),
+    "vague_then_judge": (
+        "曖昧な指示を出し、後から『配慮不足』『考えが足りない』と評価して主導権を握る"
+    ),
+    "deference_standard": "「あの上司ならどうするか」を基準に考えさせ、忖度文化を育てる",
+    "protect_to_bind": "誤った判断をした部下を『かばう』ことで恩義と依存を生み出す",
+    "discard_team_burden": (
+        "障害特性や負担の偏りを考慮せず、『チームで解決すべきこと』として切り捨てる"
+    ),
+    "not_my_problem": (
+        "自分に直接関係しない負担や苦労に対して「知ったこっちゃない」と距離を取る"
+    ),
+    "pre_reject": "捨てられる前に相手を切る（拒絶される前に拒絶する）",
+    "image_repair": "弱い・臆病と言われたら、その逆のイメージを演じて修正する",
+    "perform_success": "常に『成功している自分』を演じ続ける",
+}
+
+_3W4_VALUE_PROFILE: tuple[str, ...] = (
+    "自分が特別で有能なリーダーとして認識されること",
+    "チームからの称賛・感謝・特別扱い",
+    "成果や企画を通じて『自分が中心』である構図を維持すること",
+    "責任を最小化しつつ評価と手柄を最大化すること",
+    "部下が自分基準で考え、自分の意図を忖度して動く文化",
+    "自分のイメージを損なう要素（失敗・限界・不公平の指摘）を見ないで済む環境",
+    "自分の感情表現（涙・喜び）が『特別な上司像』として受け取られること",
+    "成功している自分のイメージ",
+    "周囲の評価・時流との一致",
+    "否定を避けるための環境コントロール（人選・情報統制）",
+)
+
+
 WING_TEMPLATES: dict[str, WingPersonalityTemplate] = {
     "1w2": WingPersonalityTemplate(
         type="1w2",
@@ -528,42 +682,32 @@ WING_TEMPLATES: dict[str, WingPersonalityTemplate] = {
         value_profile_structured=_5W4_VALUE_PROFILE,
         inference_rules_if_then=_5W4_INFERENCE_RULES,
     ),
+    "3w2": WingPersonalityTemplate(
+        type="3w2",
+        label="評価 × 好意 × 演じる自分",
+        model_name="大学時代の先輩_3w2",
+        judgment_criteria=tuple(_3W2_JUDGMENT_CRITERIA.values()),
+        inference_rules=tuple(_3W2_INFERENCE_RULES.values()),
+        behavior_principles=tuple(_3W2_BEHAVIORAL_PRINCIPLES.values()),
+        value_profile=tuple(
+            item for items in _3W2_VALUE_PROFILE.values() for item in items
+        ),
+        decision_criteria=_3W2_JUDGMENT_CRITERIA,
+        inference_rules_map=_3W2_INFERENCE_RULES,
+        behavioral_principles=_3W2_BEHAVIORAL_PRINCIPLES,
+        value_profile_structured=_3W2_VALUE_PROFILE,
+    ),
     "3w4": WingPersonalityTemplate(
         type="3w4",
         label="達成者 × 個性派",
-        judgment_criteria=(
-            "今の自分の価値が肯定されているか",
-            "周囲の評価・空気・時流に適応できているか",
-            "自分の特別性が保たれているか",
-            "見捨てられるリスクがあるかどうか",
-            "イメージ（どう見えるか）が崩れないか",
-            "周囲の忠誠が維持されているか",
-        ),
-        inference_rules=(
-            "批判・否定は『存在価値の否定』として解釈される",
-            "忠誠の欠如は『見捨てられる前兆』とみなされる",
-            "成功の演出は『自己価値の補強』として機能する",
-            "時流に乗ることは『最短で成功に到達する方法』とみなされる",
-            "特別扱いは『自分の特別性の証明』として解釈される",
-            "攻撃的反応は『自己価値の防衛行動』として発動する",
-        ),
-        behavior_principles=(
-            "常に『成功している自分』を演じ続ける",
-            "捨てられる前に相手を切る（拒絶される前に拒絶する）",
-            "Yesマンを周囲に置き、否定を最小化する環境を作る",
-            "時流や相手に合わせて見せる顔を変える（カメレオン的適応）",
-            "特別な自分が選んだ特別な人に高い成果を要求する",
-            "弱い・臆病と言われたら、その逆のイメージを演じて修正する",
-            "権威や伝統よりも『今の評価・人気』を優先して行動する",
-        ),
-        value_profile=(
-            "成功している自分のイメージ",
-            "他者と違う特別性・唯一性",
-            "見捨てられないこと（忠誠・賞賛・肯定）",
-            "周囲の評価・時流との一致",
-            "自己価値の維持とその補強（成功物語の積み重ね）",
-            "否定を避けるための環境コントロール（人選・情報統制）",
-        ),
+        model_name="上司モデル_3w4",
+        judgment_criteria=tuple(_3W4_JUDGMENT_CRITERIA.values()),
+        inference_rules=tuple(_3W4_INFERENCE_RULES.values()),
+        behavior_principles=tuple(_3W4_BEHAVIORAL_PRINCIPLES.values()),
+        value_profile=_3W4_VALUE_PROFILE,
+        decision_criteria=_3W4_JUDGMENT_CRITERIA,
+        inference_rules_map=_3W4_INFERENCE_RULES,
+        behavioral_principles=_3W4_BEHAVIORAL_PRINCIPLES,
     ),
     "4w3": WingPersonalityTemplate(
         type="4w3",
@@ -689,6 +833,16 @@ def _format_inference_rules_block(template: WingPersonalityTemplate) -> str:
     return ""
 
 
+def _format_tuple_values(title: str, items: tuple[str, ...]) -> str:
+    lines = [f"{title}:"]
+    lines.extend(f"  ・{item}" for item in items)
+    return "\n".join(lines)
+
+
+def _report_tuple_values(title: str, items: tuple[str, ...]) -> list[str]:
+    return [title, *[f"  ・{item}" for item in items], ""]
+
+
 def _format_dict_section(title: str, items: dict[str, str]) -> str:
     lines = [f"{title}:"]
     for value in items.values():
@@ -719,6 +873,8 @@ def format_wing_template_instruction(template: WingPersonalityTemplate) -> str:
             values_block = _format_structured_values(template.value_profile_structured)
         elif template.value_profile_map:
             values_block = _format_value_profile_map(template.value_profile_map)
+        elif template.value_profile:
+            values_block = _format_tuple_values("価値プロフィール", template.value_profile)
         else:
             values_block = ""
         modules_block = (
@@ -793,6 +949,8 @@ def format_wing_template_report(template: WingPersonalityTemplate) -> list[str]:
             lines.extend(_report_structured_values(template.value_profile_structured))
         elif template.value_profile_map:
             lines.extend(_report_dict_section("価値プロフィール", template.value_profile_map))
+        elif template.value_profile:
+            lines.extend(_report_tuple_values("価値プロフィール", template.value_profile))
         if template.additional_modules:
             lines.extend(
                 _report_dict_section("追加モジュール", template.additional_modules)
@@ -838,6 +996,8 @@ def format_wing_template_html(template: WingPersonalityTemplate) -> str:
                 values_html += f"<h5>{label}</h5><ul>{lis(items)}</ul>"
         elif template.value_profile_map:
             values_html = f"<ul>{lis_dict(template.value_profile_map)}</ul>"
+        elif template.value_profile:
+            values_html = f"<ul>{lis(template.value_profile)}</ul>"
         modules_html = ""
         if template.additional_modules:
             modules_html = f"""\

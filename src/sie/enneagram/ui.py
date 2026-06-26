@@ -725,6 +725,9 @@ def _render_results() -> None:
             elif wing_template.value_profile_map:
                 for item in wing_template.value_profile_map.values():
                     st.markdown(f"- {item}")
+            elif wing_template.value_profile:
+                for item in wing_template.value_profile:
+                    st.markdown(f"- {item}")
             if wing_template.additional_modules:
                 st.markdown("**追加モジュール**")
                 for item in wing_template.additional_modules.values():

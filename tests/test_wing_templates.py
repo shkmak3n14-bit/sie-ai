@@ -37,7 +37,7 @@ def _base_profile(**overrides) -> EnneagramProfile:
 
 def test_all_requested_templates_exist() -> None:
     assert set(WING_TEMPLATES) == {
-        "1w2", "2w1", "3w4", "5w4", "7w6", "7w8", "8w7", "4w3", "4w5",
+        "1w2", "2w1", "3w2", "3w4", "5w4", "7w6", "7w8", "8w7", "4w3", "4w5",
     }
 
 
@@ -99,7 +99,40 @@ def test_7w6_fukumoto_template() -> None:
     assert "尊敬する" in report
 
 
-def test_3w4_template_in_instruction() -> None:
+def test_3w2_senior_profile() -> None:
+    template = get_wing_template(3, 2)
+    assert template is not None
+    assert template.model_name == "大学時代の先輩_3w2"
+    assert template.label == "評価 × 好意 × 演じる自分"
+    assert "好かれること" in template.inference_rules_map["likability_equals_value"]
+    assert "電池切れ" in template.behavioral_principles["external_full_power_internal_shutdown"]
+    assert "ショー化" in template.value_profile_structured["shadow_values"][3]
+
+    session = Session.create()
+    session.enneagram = _base_profile(primary_type=3, wing=2)
+    session.phase = ConversationPhase.CORE
+    instruction = get_enneagram_instruction(session)
+    assert instruction is not None
+    assert "3w2" in instruction
+    assert "大学時代の先輩_3w2" in instruction
+    assert "肯定的価値" in instruction
+    assert "影の側面" in instruction
+
+    report = format_report_plain(_base_profile(primary_type=3, wing=2))
+    assert "3w2" in report
+    assert "演じる自分" in report
+
+
+def test_3w4_boss_model_merged() -> None:
+    template = get_wing_template(3, 4)
+    assert template is not None
+    assert template.model_name == "上司モデル_3w4"
+    assert template.label == "達成者 × 個性派"
+    assert "競争相手" in template.decision_criteria["competitor_threat"]
+    assert "見捨てられる前兆" in template.inference_rules_map["loyalty_loss_as_abandonment"]
+    assert "カメレオン的適応" in template.behavioral_principles["chameleon_advantage"]
+    assert "成功している自分のイメージ" in template.value_profile
+
     session = Session.create()
     session.enneagram = _base_profile(primary_type=3, wing=4)
     session.phase = ConversationPhase.CORE
@@ -107,13 +140,14 @@ def test_3w4_template_in_instruction() -> None:
     instruction = get_enneagram_instruction(session)
     assert instruction is not None
     assert "3w4" in instruction
+    assert "上司モデル_3w4" in instruction
     assert "達成者 × 個性派" in instruction
+    assert "忖度" in instruction
     assert "存在価値の否定" in instruction
-    assert "カメレオン的適応" in instruction
 
     report = format_report_plain(_base_profile(primary_type=3, wing=4))
     assert "3w4" in report
-    assert "成功している自分のイメージ" in report
+    assert "上司モデル" in report
 
 
 def test_1w2_template_in_instruction() -> None:
