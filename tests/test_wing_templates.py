@@ -37,11 +37,12 @@ def _base_profile(**overrides) -> EnneagramProfile:
 
 def test_all_requested_templates_exist() -> None:
     assert set(WING_TEMPLATES) == {
-        "2w1", "5w4", "7w6", "7w8", "8w7", "4w3", "4w5",
+        "1w2", "2w1", "5w4", "7w6", "7w8", "8w7", "4w3", "4w5",
     }
 
 
 def test_wing_type_code() -> None:
+    assert wing_type_code(1, 2) == "1w2"
     assert wing_type_code(2, 1) == "2w1"
     assert wing_type_code(8, 7) == "8w7"
     assert wing_type_code(7, 8) == "7w8"
@@ -96,6 +97,23 @@ def test_7w6_fukumoto_template() -> None:
     report = format_report_plain(_base_profile(primary_type=7, wing=6))
     assert "Fukumoto-Style_7w6" in report
     assert "尊敬する" in report
+
+
+def test_1w2_template_in_instruction() -> None:
+    session = Session.create()
+    session.enneagram = _base_profile(primary_type=1, wing=2)
+    session.phase = ConversationPhase.CORE
+
+    instruction = get_enneagram_instruction(session)
+    assert instruction is not None
+    assert "1w2" in instruction
+    assert "正義 × 献身 × 継承の義務" in instruction
+    assert "正義の裏切り" in instruction
+    assert "自己犠牲的な献身" in instruction
+
+    report = format_report_plain(_base_profile(primary_type=1, wing=2))
+    assert "1w2" in report
+    assert "継承の義務" in report
 
 
 def test_2w1_template_in_instruction() -> None:
