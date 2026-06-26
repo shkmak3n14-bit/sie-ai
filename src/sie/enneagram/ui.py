@@ -29,7 +29,7 @@ from sie.enneagram.scoring import (
 from sie.enneagram.type_tiebreak_questions import get_type_tiebreak_questions
 from sie.enneagram.types import Center, get_type_info, wing_types
 from sie.enneagram.wing_questions import get_wing_questions
-from sie.enneagram.wing_templates import get_wing_template
+from sie.enneagram.wing_templates import get_wing_template, value_profile_category_label
 from sie.enneagram.center_tiebreak_questions import get_center_tiebreak_questions
 
 TOTAL_STEPS = 9
@@ -706,21 +706,19 @@ def _render_results() -> None:
             for item in wing_template.decision_criteria.values():
                 st.markdown(f"- {item}")
             st.markdown("**推論ルール**")
-            for item in (wing_template.inference_rules_map or {}).values():
-                st.markdown(f"- {item}")
+            if wing_template.inference_rules_if_then:
+                for rule in wing_template.inference_rules_if_then:
+                    st.markdown(f"- {rule.condition} → {rule.outcome}")
+            elif wing_template.inference_rules_map:
+                for item in wing_template.inference_rules_map.values():
+                    st.markdown(f"- {item}")
             st.markdown("**行動原理**")
             for item in (wing_template.behavioral_principles or {}).values():
                 st.markdown(f"- {item}")
             st.markdown("**価値プロフィール**")
             if wing_template.value_profile_structured:
                 for key, items in wing_template.value_profile_structured.items():
-                    label = {
-                        "likes": "好む",
-                        "dislikes": "嫌う",
-                        "respects": "尊敬する",
-                        "contempts": "軽蔑する",
-                    }.get(key, key)
-                    st.markdown(f"*{label}*")
+                    st.markdown(f"*{value_profile_category_label(key)}*")
                     for item in items:
                         st.markdown(f"- {item}")
             elif wing_template.value_profile_map:

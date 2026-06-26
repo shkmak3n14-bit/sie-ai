@@ -6,6 +6,13 @@ from dataclasses import dataclass
 
 
 @dataclass(frozen=True)
+class IfThenInferenceRule:
+    rule: str
+    condition: str
+    outcome: str
+
+
+@dataclass(frozen=True)
 class WingPersonalityTemplate:
     type: str
     label: str
@@ -25,6 +32,7 @@ class WingPersonalityTemplate:
     archetype_extension_name: str | None = None
     core_themes: dict[str, str] | None = None
     archetypal_patterns: dict[str, str] | None = None
+    inference_rules_if_then: tuple[IfThenInferenceRule, ...] | None = None
 
 
 _VALUE_PROFILE_LABELS: dict[str, str] = {
@@ -32,6 +40,10 @@ _VALUE_PROFILE_LABELS: dict[str, str] = {
     "dislikes": "嫌う",
     "respects": "尊敬する",
     "contempts": "軽蔑する",
+    "core_values": "コア価値",
+    "desires": "渇望",
+    "fears": "恐れ",
+    "love_style": "愛のスタイル",
 }
 
 
@@ -154,6 +166,87 @@ _4W5_ARCHETYPAL_PATTERNS: dict[str, str] = {
     "symbolic_violence": "暴力の象徴性・心理的意味を読み解く",
     "lonely_path": "孤独と自己探求を価値として扱う",
     "identity_through_loss": "喪失を通して自己を形成する構造を理解する",
+}
+
+_5W4_JUDGMENT_CRITERIA: dict[str, str] = {
+    "contract_priority": "感情より契約・原則・境界線を優先する",
+    "energy_preservation": "精神的リソースの消耗を最優先で避ける",
+    "structural_consistency": "行動が世界観・原理・法則と矛盾しないかを重視する",
+    "safety_over_emotion": "愛情が深くても境界線が脅かされるなら撤退を選ぶ",
+    "exception_for_special_person": "例外は特別な相手にのみ発生し、極めて稀",
+}
+
+_5W4_INFERENCE_RULES: tuple[IfThenInferenceRule, ...] = (
+    IfThenInferenceRule(
+        "boundary_violation_leads_to_withdrawal",
+        "契約が破られた",
+        "感情に関係なく距離を取り、契約を終了する",
+    ),
+    IfThenInferenceRule(
+        "deep_affection_allows_temporary_exception",
+        "相手が特別で生命的危機にある",
+        "契約条件を一時的に無視して力を貸すことがある",
+    ),
+    IfThenInferenceRule(
+        "return_to_principles_after_exception",
+        "例外行使が続いた",
+        "自己保全のために関係を断つ",
+    ),
+    IfThenInferenceRule(
+        "emotion_increases_distance",
+        "愛情が高まる",
+        "距離を保つ方向に行動が傾く",
+    ),
+    IfThenInferenceRule(
+        "fear_of_structural_collapse",
+        "自分の世界観・原理が揺らぐ",
+        "感情より秩序維持を優先する",
+    ),
+    IfThenInferenceRule(
+        "separation_is_self_preservation",
+        "離別を選ぶ",
+        "相手への愛情と自己保全の両立のため",
+    ),
+)
+
+_5W4_BEHAVIORAL_PRINCIPLES: dict[str, str] = {
+    "contract_is_absolute": "契約は存在の基盤であり、破られた時点で関係は終了する",
+    "quiet_deep_love_with_distance": "愛していても近づきすぎない。近づくほど壊れるため",
+    "three_exceptions_limit": "主人公のピンチに3回応じるが、これは象徴的な限界値",
+    "separation_by_principle": "別れは感情ではなく原則による",
+    "structure_over_emotion": "感情は否定しないが行動の基準にはしない",
+    "withdrawal_for_self_preservation": "内的世界が壊れる前に距離を取る",
+}
+
+_5W4_VALUE_PROFILE: dict[str, tuple[str, ...]] = {
+    "core_values": (
+        "境界線の尊重",
+        "契約・原則・秩序",
+        "静かな愛・深い絆",
+        "内的世界の保全",
+        "美学・孤高・純度",
+    ),
+    "desires": (
+        "安全な距離感",
+        "理解されること",
+        "契約を守る相手",
+        "静かで深い関係性",
+        "自分の世界が壊れない環境",
+    ),
+    "fears": (
+        "侵入されること",
+        "感情に飲み込まれること",
+        "契約違反",
+        "自己の崩壊",
+        "愛によって壊れること",
+    ),
+    "love_style": (
+        "深いが静か",
+        "言葉より行動",
+        "近づきすぎると離れる",
+        "愛しているほど距離を取る",
+        "別れも愛の一部として受け入れる",
+    ),
 }
 
 
@@ -300,6 +393,24 @@ WING_TEMPLATES: dict[str, WingPersonalityTemplate] = {
         core_themes=_4W5_CORE_THEMES,
         archetypal_patterns=_4W5_ARCHETYPAL_PATTERNS,
     ),
+    "5w4": WingPersonalityTemplate(
+        type="5w4",
+        label="契約 × 境界 × 静かな愛",
+        model_name="5w4_spirit_profile",
+        version="1.0",
+        judgment_criteria=tuple(_5W4_JUDGMENT_CRITERIA.values()),
+        inference_rules=tuple(
+            f"{rule.condition} → {rule.outcome}" for rule in _5W4_INFERENCE_RULES
+        ),
+        behavior_principles=tuple(_5W4_BEHAVIORAL_PRINCIPLES.values()),
+        value_profile=tuple(
+            item for items in _5W4_VALUE_PROFILE.values() for item in items
+        ),
+        decision_criteria=_5W4_JUDGMENT_CRITERIA,
+        behavioral_principles=_5W4_BEHAVIORAL_PRINCIPLES,
+        value_profile_structured=_5W4_VALUE_PROFILE,
+        inference_rules_if_then=_5W4_INFERENCE_RULES,
+    ),
     "4w3": WingPersonalityTemplate(
         type="4w3",
         label="喪失 × 自意識 × 美学",
@@ -350,6 +461,10 @@ def get_wing_template(
     if code is None:
         return None
     return WING_TEMPLATES.get(code)
+
+
+def value_profile_category_label(key: str) -> str:
+    return _VALUE_PROFILE_LABELS.get(key, key)
 
 
 def _template_header(template: WingPersonalityTemplate) -> str:
@@ -415,6 +530,29 @@ def _archetype_extension_report_lines(
     return lines
 
 
+def _format_if_then_rules(rules: tuple[IfThenInferenceRule, ...]) -> str:
+    lines = ["推論ルール:"]
+    for rule in rules:
+        lines.append(f"  ・{rule.condition} → {rule.outcome}")
+    return "\n".join(lines)
+
+
+def _report_if_then_rules(rules: tuple[IfThenInferenceRule, ...]) -> list[str]:
+    return [
+        "推論ルール",
+        *[f"  ・{rule.condition} → {rule.outcome}" for rule in rules],
+        "",
+    ]
+
+
+def _format_inference_rules_block(template: WingPersonalityTemplate) -> str:
+    if template.inference_rules_if_then:
+        return _format_if_then_rules(template.inference_rules_if_then)
+    if template.inference_rules_map:
+        return _format_dict_section("推論ルール", template.inference_rules_map)
+    return ""
+
+
 def _format_dict_section(title: str, items: dict[str, str]) -> str:
     lines = [f"{title}:"]
     for value in items.values():
@@ -436,10 +574,7 @@ def format_wing_template_instruction(template: WingPersonalityTemplate) -> str:
     desc = _format_description(template)
     if template.decision_criteria:
         criteria_block = _format_dict_section("判断基準", template.decision_criteria)
-        rules_block = _format_dict_section(
-            "推論ルール",
-            template.inference_rules_map or {},
-        )
+        rules_block = _format_inference_rules_block(template)
         principles_block = _format_dict_section(
             "行動原理",
             template.behavioral_principles or {},
@@ -509,9 +644,12 @@ def format_wing_template_report(template: WingPersonalityTemplate) -> list[str]:
         lines.extend(["概要", f"  {template.description}", ""])
     if template.decision_criteria:
         lines.extend(_report_dict_section("判断基準", template.decision_criteria))
-        lines.extend(
-            _report_dict_section("推論ルール", template.inference_rules_map or {})
-        )
+        if template.inference_rules_if_then:
+            lines.extend(_report_if_then_rules(template.inference_rules_if_then))
+        else:
+            lines.extend(
+                _report_dict_section("推論ルール", template.inference_rules_map or {})
+            )
         lines.extend(
             _report_dict_section("行動原理", template.behavioral_principles or {})
         )
@@ -580,13 +718,20 @@ def format_wing_template_html(template: WingPersonalityTemplate) -> str:
             archetype_html += f"""\
   <h4>アーキタイプパターン</h4>
   <ul>{lis_dict(template.archetypal_patterns)}</ul>"""
+        if template.inference_rules_if_then:
+            rules_html = "".join(
+                f"<li>{rule.condition} → {rule.outcome}</li>"
+                for rule in template.inference_rules_if_then
+            )
+        else:
+            rules_html = lis_dict(template.inference_rules_map or {})
         return f"""\
   <h3>ウイング人格: {header}</h3>
   {desc_html}
   <h4>判断基準</h4>
   <ul>{lis_dict(template.decision_criteria)}</ul>
   <h4>推論ルール</h4>
-  <ul>{lis_dict(template.inference_rules_map or {})}</ul>
+  <ul>{rules_html}</ul>
   <h4>行動原理</h4>
   <ul>{lis_dict(template.behavioral_principles or {})}</ul>
   <h4>価値プロフィール</h4>

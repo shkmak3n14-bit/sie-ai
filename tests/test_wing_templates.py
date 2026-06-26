@@ -36,7 +36,9 @@ def _base_profile(**overrides) -> EnneagramProfile:
 
 
 def test_all_requested_templates_exist() -> None:
-    assert set(WING_TEMPLATES) == {"2w1", "7w6", "7w8", "8w7", "4w3", "4w5"}
+    assert set(WING_TEMPLATES) == {
+        "2w1", "5w4", "7w6", "7w8", "8w7", "4w3", "4w5",
+    }
 
 
 def test_wing_type_code() -> None:
@@ -56,7 +58,7 @@ def test_get_wing_template_lookup() -> None:
 
 def test_get_wing_template_unknown_returns_none() -> None:
     assert get_wing_template(8, 9) is None
-    assert get_wing_template(5, 4) is None
+    assert get_wing_template(5, 6) is None
 
 
 def test_core_phase_includes_wing_template() -> None:
@@ -106,6 +108,34 @@ def test_2w1_template_in_instruction() -> None:
     assert "2w1" in instruction
     assert "献身 × 義務 × 過剰な救済欲求" in instruction
     assert "救うための暴力" in instruction
+
+
+def test_5w4_spirit_profile() -> None:
+    template = get_wing_template(5, 4)
+    assert template is not None
+    assert template.model_name == "5w4_spirit_profile"
+    assert template.version == "1.0"
+    assert template.label == "契約 × 境界 × 静かな愛"
+    assert "契約・原則・境界線" in template.decision_criteria["contract_priority"]
+    assert template.inference_rules_if_then is not None
+    assert len(template.inference_rules_if_then) == 6
+    assert template.inference_rules_if_then[0].condition == "契約が破られた"
+    assert "core_values" in template.value_profile_structured
+    assert "愛によって壊れること" in template.value_profile_structured["fears"]
+
+    session = Session.create()
+    session.enneagram = _base_profile(primary_type=5, wing=4)
+    session.phase = ConversationPhase.CORE
+    instruction = get_enneagram_instruction(session)
+    assert instruction is not None
+    assert "5w4" in instruction
+    assert "5w4_spirit_profile" in instruction
+    assert "契約が破られた →" in instruction
+    assert "コア価値" in instruction
+
+    report = format_report_plain(_base_profile(primary_type=5, wing=4))
+    assert "5w4_spirit_profile" in report
+    assert "愛のスタイル" in report
 
 
 def test_4w5_deepsoul_template() -> None:
