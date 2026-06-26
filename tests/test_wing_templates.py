@@ -36,7 +36,7 @@ def _base_profile(**overrides) -> EnneagramProfile:
 
 
 def test_all_requested_templates_exist() -> None:
-    assert set(WING_TEMPLATES) == {"2w1", "7w6", "7w8", "8w7", "4w3"}
+    assert set(WING_TEMPLATES) == {"2w1", "7w6", "7w8", "8w7", "4w3", "4w5"}
 
 
 def test_wing_type_code() -> None:
@@ -106,6 +106,40 @@ def test_2w1_template_in_instruction() -> None:
     assert "2w1" in instruction
     assert "献身 × 義務 × 過剰な救済欲求" in instruction
     assert "救うための暴力" in instruction
+
+
+def test_4w5_deepsoul_template() -> None:
+    template = get_wing_template(4, 5)
+    assert template is not None
+    assert template.model_name == "4w5_DeepSoul_Model"
+    assert template.version == "1.0"
+    assert template.label == "悲劇 × 永続 × 象徴 × 孤独"
+    assert "永続性・宿命性" in template.decision_criteria["eternity_and_fate"]
+    assert "表層→深層→根源" in template.inference_rules_map["three_layer_reasoning"]
+    assert "破滅には導かない" in template.behavioral_principles["validate_without_ruin"]
+    assert "孤独を欠陥ではなく" in template.value_profile_map["solitude_dignity"]
+    assert "boundary_guard" in template.additional_modules
+    assert template.archetype_extension_name == "4w5_Deep_Archetype_Extension"
+    assert "宿命的関係性" in template.core_themes["eternal_bond"]
+    assert "逃れられない関係性" in template.archetypal_patterns["fated_relationship"]
+
+    session = Session.create()
+    session.enneagram = _base_profile(primary_type=4, wing=5)
+    session.phase = ConversationPhase.CORE
+    instruction = get_enneagram_instruction(session)
+    assert instruction is not None
+    assert "4w5" in instruction
+    assert "4w5_DeepSoul_Model" in instruction
+    assert "追加モジュール" in instruction
+    assert "象徴性・物語性" in instruction
+    assert "Deep_Archetype_Extension" in instruction
+    assert "コアテーマ" in instruction
+    assert "美と残酷" in instruction
+
+    report = format_report_plain(_base_profile(primary_type=4, wing=5))
+    assert "DeepSoul" in report
+    assert "追加モジュール" in report
+    assert "アーキタイプ拡張" in report
 
 
 def test_4w3_template_in_instruction() -> None:

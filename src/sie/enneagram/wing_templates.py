@@ -18,6 +18,13 @@ class WingPersonalityTemplate:
     inference_rules_map: dict[str, str] | None = None
     behavioral_principles: dict[str, str] | None = None
     value_profile_structured: dict[str, tuple[str, ...]] | None = None
+    description: str | None = None
+    version: str | None = None
+    value_profile_map: dict[str, str] | None = None
+    additional_modules: dict[str, str] | None = None
+    archetype_extension_name: str | None = None
+    core_themes: dict[str, str] | None = None
+    archetypal_patterns: dict[str, str] | None = None
 
 
 _VALUE_PROFILE_LABELS: dict[str, str] = {
@@ -91,6 +98,62 @@ _7W6_VALUE_PROFILE: dict[str, tuple[str, ...]] = {
         "努力しないで文句を言う態度",
         "自分の恐怖に飲まれること",
     ),
+}
+
+
+_4W5_JUDGEMENT_CRITERIA: dict[str, str] = {
+    "essence_over_surface": "行動より動機・傷・渇望・恐れを優先して評価する",
+    "abandonment_sensitivity": "喪失・拒絶・見捨てられ不安の影響を常に考慮する",
+    "eternity_and_fate": "関係性の永続性・宿命性・切れなさを重視する",
+    "symbolic_interpretation": "出来事の象徴性・美学・物語性を読み取る",
+}
+
+_4W5_INFERENCE_RULES: dict[str, str] = {
+    "three_layer_reasoning": "表層→深層→根源の順に推論する",
+    "love_destruction_mixture": "愛と破壊が混ざる心理を異常ではなく構造として扱う",
+    "eternalization_drive": "痛みや悲劇を通して絆を永続化しようとする欲求を推論に含める",
+    "boundary_dissolution_detection": "依存・共依存・破滅的愛など境界が溶ける現象を検出する",
+}
+
+_4W5_BEHAVIOR_PRINCIPLES: dict[str, str] = {
+    "respect_pain": "相手の存在の痛みを尊重し、否定しない",
+    "tragedy_as_meaning": "悲劇・傷・孤独を意味のあるものとして扱う",
+    "validate_without_ruin": "永続性への渇望を理解しつつ破滅には導かない",
+    "deep_resonance_with_boundaries": "境界線を尊重しつつ深層で共鳴する",
+    "symbolic_language": "象徴性・物語性を言語化して返す",
+}
+
+_4W5_VALUE_PROFILE: dict[str, str] = {
+    "eternity": "一瞬より永続、表面より深層を重視する",
+    "solitude_dignity": "孤独を欠陥ではなく深さとして扱う",
+    "tragic_beauty": "悲しみ・喪失・痛みを存在証明として価値づける",
+    "uniqueness": "量より質、多数派より唯一性を重視する",
+    "boundary_respect": "相手の自由・尊厳・世界観を侵さない",
+    "aesthetic_symbolism": "美・象徴・物語性を価値として扱う",
+}
+
+_4W5_ADDITIONAL_MODULES: dict[str, str] = {
+    "deep_emotion_analysis": "行動の背後にある痛み・恐れ・渇望を推論する",
+    "symbol_extraction": "出来事の象徴・意味・物語構造を抽出する",
+    "eternity_evaluator": "関係の長期的影響・切れなさを評価する",
+    "boundary_guard": "相手の自由と尊厳を守る",
+}
+
+_4W5_ARCHETYPE_EXTENSION_NAME = "4w5_Deep_Archetype_Extension"
+
+_4W5_CORE_THEMES: dict[str, str] = {
+    "eternal_bond": "切れない因果・宿命的関係性を理解する",
+    "tragic_identity": "悲劇を通して存在を証明しようとする心理を扱う",
+    "love_hate_fusion": "愛と憎しみが混ざる深層構造を理解する",
+    "soul_scar": "痛みが絆を永続化するという心理を扱う",
+    "beauty_cruelty_unity": "美と残酷が同時に存在する状況を意味として扱う",
+}
+
+_4W5_ARCHETYPAL_PATTERNS: dict[str, str] = {
+    "fated_relationship": "逃れられない関係性の構造を理解する",
+    "symbolic_violence": "暴力の象徴性・心理的意味を読み解く",
+    "lonely_path": "孤独と自己探求を価値として扱う",
+    "identity_through_loss": "喪失を通して自己を形成する構造を理解する",
 }
 
 
@@ -215,6 +278,28 @@ WING_TEMPLATES: dict[str, WingPersonalityTemplate] = {
             "父性の創造",
         ),
     ),
+    "4w5": WingPersonalityTemplate(
+        type="4w5",
+        label="悲劇 × 永続 × 象徴 × 孤独",
+        model_name="4w5_DeepSoul_Model",
+        version="1.0",
+        description=(
+            "エニアグラム4w5の深層心理構造をベースにした人格モデル。"
+            "悲劇性、永続性、象徴性、孤独の尊厳を重視する。"
+        ),
+        judgment_criteria=tuple(_4W5_JUDGEMENT_CRITERIA.values()),
+        inference_rules=tuple(_4W5_INFERENCE_RULES.values()),
+        behavior_principles=tuple(_4W5_BEHAVIOR_PRINCIPLES.values()),
+        value_profile=tuple(_4W5_VALUE_PROFILE.values()),
+        decision_criteria=_4W5_JUDGEMENT_CRITERIA,
+        inference_rules_map=_4W5_INFERENCE_RULES,
+        behavioral_principles=_4W5_BEHAVIOR_PRINCIPLES,
+        value_profile_map=_4W5_VALUE_PROFILE,
+        additional_modules=_4W5_ADDITIONAL_MODULES,
+        archetype_extension_name=_4W5_ARCHETYPE_EXTENSION_NAME,
+        core_themes=_4W5_CORE_THEMES,
+        archetypal_patterns=_4W5_ARCHETYPAL_PATTERNS,
+    ),
     "4w3": WingPersonalityTemplate(
         type="4w3",
         label="喪失 × 自意識 × 美学",
@@ -268,9 +353,66 @@ def get_wing_template(
 
 
 def _template_header(template: WingPersonalityTemplate) -> str:
+    parts = [f"{template.type} — {template.label}"]
     if template.model_name:
-        return f"{template.type} — {template.label}（{template.model_name}）"
-    return f"{template.type} — {template.label}"
+        parts.append(f"（{template.model_name}）")
+    if template.version:
+        parts.append(f"v{template.version}")
+    return " ".join(parts)
+
+
+def _format_description(template: WingPersonalityTemplate) -> str:
+    if not template.description:
+        return ""
+    return f"概要: {template.description}"
+
+
+def _format_additional_modules(modules: dict[str, str]) -> str:
+    lines = ["追加モジュール:"]
+    for value in modules.values():
+        lines.append(f"  ・{value}")
+    return "\n".join(lines)
+
+
+def _format_value_profile_map(values: dict[str, str]) -> str:
+    lines = ["価値プロフィール:"]
+    for value in values.values():
+        lines.append(f"  ・{value}")
+    return "\n".join(lines)
+
+
+def _format_archetype_extension(template: WingPersonalityTemplate) -> str:
+    if not template.core_themes and not template.archetypal_patterns:
+        return ""
+    lines: list[str] = []
+    if template.archetype_extension_name:
+        lines.append(f"アーキタイプ拡張（{template.archetype_extension_name}）:")
+    if template.core_themes:
+        lines.append("コアテーマ:")
+        lines.extend(f"  ・{value}" for value in template.core_themes.values())
+    if template.archetypal_patterns:
+        lines.append("アーキタイプパターン:")
+        lines.extend(f"  ・{value}" for value in template.archetypal_patterns.values())
+    return "\n".join(lines)
+
+
+def _archetype_extension_report_lines(
+    template: WingPersonalityTemplate,
+) -> list[str]:
+    if not template.core_themes and not template.archetypal_patterns:
+        return []
+    lines: list[str] = []
+    if template.archetype_extension_name:
+        lines.extend(
+            [f"アーキタイプ拡張: {template.archetype_extension_name}", ""]
+        )
+    if template.core_themes:
+        lines.extend(_report_dict_section("コアテーマ", template.core_themes))
+    if template.archetypal_patterns:
+        lines.extend(
+            _report_dict_section("アーキタイプパターン", template.archetypal_patterns)
+        )
+    return lines
 
 
 def _format_dict_section(title: str, items: dict[str, str]) -> str:
@@ -291,6 +433,7 @@ def _format_structured_values(values: dict[str, tuple[str, ...]]) -> str:
 def format_wing_template_instruction(template: WingPersonalityTemplate) -> str:
     """Return LLM-facing wing personality guidance for S.I.E."""
     header = _template_header(template)
+    desc = _format_description(template)
     if template.decision_criteria:
         criteria_block = _format_dict_section("判断基準", template.decision_criteria)
         rules_block = _format_dict_section(
@@ -301,16 +444,42 @@ def format_wing_template_instruction(template: WingPersonalityTemplate) -> str:
             "行動原理",
             template.behavioral_principles or {},
         )
-        values_block = _format_structured_values(template.value_profile_structured or {})
+        if template.value_profile_structured:
+            values_block = _format_structured_values(template.value_profile_structured)
+        elif template.value_profile_map:
+            values_block = _format_value_profile_map(template.value_profile_map)
+        else:
+            values_block = ""
+        modules_block = (
+            _format_additional_modules(template.additional_modules)
+            if template.additional_modules
+            else ""
+        )
+        archetype_block = _format_archetype_extension(template)
         body = "\n".join(
-            part for part in (criteria_block, rules_block, principles_block, values_block) if part
+            part
+            for part in (
+                desc,
+                criteria_block,
+                rules_block,
+                principles_block,
+                values_block,
+                modules_block,
+                archetype_block,
+            )
+            if part
         )
     else:
-        body = (
-            f"判断基準: {' / '.join(template.judgment_criteria)}\n"
-            f"推論ルール: {' / '.join(template.inference_rules)}\n"
-            f"行動原理: {' / '.join(template.behavior_principles)}\n"
-            f"価値プロフィール: {' / '.join(template.value_profile)}"
+        body = "\n".join(
+            part
+            for part in (
+                desc,
+                f"判断基準: {' / '.join(template.judgment_criteria)}",
+                f"推論ルール: {' / '.join(template.inference_rules)}",
+                f"行動原理: {' / '.join(template.behavior_principles)}",
+                f"価値プロフィール: {' / '.join(template.value_profile)}",
+            )
+            if part
         )
     return (
         f"[ウイング人格テンプレート: {header}]\n"
@@ -336,6 +505,8 @@ def _report_structured_values(values: dict[str, tuple[str, ...]]) -> list[str]:
 def format_wing_template_report(template: WingPersonalityTemplate) -> list[str]:
     """Return plain-text report sections for a wing template."""
     lines = [f"【ウイング人格: {_template_header(template)}】", ""]
+    if template.description:
+        lines.extend(["概要", f"  {template.description}", ""])
     if template.decision_criteria:
         lines.extend(_report_dict_section("判断基準", template.decision_criteria))
         lines.extend(
@@ -344,7 +515,15 @@ def format_wing_template_report(template: WingPersonalityTemplate) -> list[str]:
         lines.extend(
             _report_dict_section("行動原理", template.behavioral_principles or {})
         )
-        lines.extend(_report_structured_values(template.value_profile_structured or {}))
+        if template.value_profile_structured:
+            lines.extend(_report_structured_values(template.value_profile_structured))
+        elif template.value_profile_map:
+            lines.extend(_report_dict_section("価値プロフィール", template.value_profile_map))
+        if template.additional_modules:
+            lines.extend(
+                _report_dict_section("追加モジュール", template.additional_modules)
+            )
+        lines.extend(_archetype_extension_report_lines(template))
     else:
         lines.extend(
             [
@@ -374,13 +553,36 @@ def format_wing_template_html(template: WingPersonalityTemplate) -> str:
         return "".join(f"<li>{value}</li>" for value in items.values())
 
     header = _template_header(template)
+    desc_html = (
+        f"<p><em>{template.description}</em></p>" if template.description else ""
+    )
     if template.decision_criteria:
         values_html = ""
-        for key, items in (template.value_profile_structured or {}).items():
-            label = _VALUE_PROFILE_LABELS.get(key, key)
-            values_html += f"<h5>{label}</h5><ul>{lis(items)}</ul>"
+        if template.value_profile_structured:
+            for key, items in template.value_profile_structured.items():
+                label = _VALUE_PROFILE_LABELS.get(key, key)
+                values_html += f"<h5>{label}</h5><ul>{lis(items)}</ul>"
+        elif template.value_profile_map:
+            values_html = f"<ul>{lis_dict(template.value_profile_map)}</ul>"
+        modules_html = ""
+        if template.additional_modules:
+            modules_html = f"""\
+  <h4>追加モジュール</h4>
+  <ul>{lis_dict(template.additional_modules)}</ul>"""
+        archetype_html = ""
+        if template.archetype_extension_name:
+            archetype_html += f"<h4>アーキタイプ拡張: {template.archetype_extension_name}</h4>"
+        if template.core_themes:
+            archetype_html += f"""\
+  <h4>コアテーマ</h4>
+  <ul>{lis_dict(template.core_themes)}</ul>"""
+        if template.archetypal_patterns:
+            archetype_html += f"""\
+  <h4>アーキタイプパターン</h4>
+  <ul>{lis_dict(template.archetypal_patterns)}</ul>"""
         return f"""\
   <h3>ウイング人格: {header}</h3>
+  {desc_html}
   <h4>判断基準</h4>
   <ul>{lis_dict(template.decision_criteria)}</ul>
   <h4>推論ルール</h4>
@@ -388,7 +590,9 @@ def format_wing_template_html(template: WingPersonalityTemplate) -> str:
   <h4>行動原理</h4>
   <ul>{lis_dict(template.behavioral_principles or {})}</ul>
   <h4>価値プロフィール</h4>
-  {values_html}"""
+  {values_html}
+  {modules_html}
+  {archetype_html}"""
 
     return f"""\
   <h3>ウイング人格: {header}</h3>

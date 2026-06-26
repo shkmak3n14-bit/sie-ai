@@ -695,8 +695,12 @@ def _render_results() -> None:
         caption = f"タイプ {wing_template.type} の人格テンプレート"
         if wing_template.model_name:
             caption += f" — {wing_template.model_name}"
+        if wing_template.version:
+            caption += f" v{wing_template.version}"
         st.markdown(f"### ウイング人格 — {wing_template.label}")
         st.caption(caption)
+        if wing_template.description:
+            st.markdown(wing_template.description)
         if wing_template.decision_criteria:
             st.markdown("**判断基準**")
             for item in wing_template.decision_criteria.values():
@@ -708,10 +712,35 @@ def _render_results() -> None:
             for item in (wing_template.behavioral_principles or {}).values():
                 st.markdown(f"- {item}")
             st.markdown("**価値プロフィール**")
-            for key, items in (wing_template.value_profile_structured or {}).items():
-                label = {"likes": "好む", "dislikes": "嫌う", "respects": "尊敬する", "contempts": "軽蔑する"}.get(key, key)
-                st.markdown(f"*{label}*")
-                for item in items:
+            if wing_template.value_profile_structured:
+                for key, items in wing_template.value_profile_structured.items():
+                    label = {
+                        "likes": "好む",
+                        "dislikes": "嫌う",
+                        "respects": "尊敬する",
+                        "contempts": "軽蔑する",
+                    }.get(key, key)
+                    st.markdown(f"*{label}*")
+                    for item in items:
+                        st.markdown(f"- {item}")
+            elif wing_template.value_profile_map:
+                for item in wing_template.value_profile_map.values():
+                    st.markdown(f"- {item}")
+            if wing_template.additional_modules:
+                st.markdown("**追加モジュール**")
+                for item in wing_template.additional_modules.values():
+                    st.markdown(f"- {item}")
+            if wing_template.archetype_extension_name:
+                st.markdown(
+                    f"**アーキタイプ拡張 — {wing_template.archetype_extension_name}**"
+                )
+            if wing_template.core_themes:
+                st.markdown("**コアテーマ**")
+                for item in wing_template.core_themes.values():
+                    st.markdown(f"- {item}")
+            if wing_template.archetypal_patterns:
+                st.markdown("**アーキタイプパターン**")
+                for item in wing_template.archetypal_patterns.values():
                     st.markdown(f"- {item}")
         else:
             st.markdown("**判断基準**")
