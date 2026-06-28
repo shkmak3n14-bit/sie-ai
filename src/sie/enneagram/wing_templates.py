@@ -49,6 +49,9 @@ _VALUE_PROFILE_LABELS: dict[str, str] = {
     "profile_core": "根底の価値",
     "father_profile": "Father",
     "brother_profile": "Brother",
+    "jujutsu_core_values": "分析・美学（コア価値）",
+    "jujutsu_fears": "分析・美学（恐れ）",
+    "jujutsu_desires": "分析・美学（渇望）",
 }
 
 
@@ -279,6 +282,94 @@ _5W4_VALUE_PROFILE: dict[str, tuple[str, ...]] = {
         "近づきすぎると離れる",
         "愛しているほど距離を取る",
         "別れも愛の一部として受け入れる",
+    ),
+}
+
+
+_5W4_JUJUTSU_JUDGMENT_CRITERIA: dict[str, str] = {
+    "rule_consistency": "世界や能力が明確なルールと制約に基づいて動いているかを最優先で評価する",
+    "constraint_beauty": "制約が強いほど美学的価値が高いと判断する",
+    "emotional_residue_intensity": (
+        "感情の残滓（喪失・執着・孤独）がどれほど強く世界に影響しているかを評価する"
+    ),
+    "individuality_integrity": (
+        "能力・行動・選択がその人物の個性や美学と一貫しているかを重視する"
+    ),
+    "strategic_reading_alignment": (
+        "相手との認識合わせが成立し、読み合いが可能な状況かどうかを判断基準とする"
+    ),
+}
+
+_5W4_JUJUTSU_INFERENCE_RULES: dict[str, str] = {
+    "rule_1_conditional_branching": (
+        "状況を条件分岐で整理し、AならX、BならYという形で推論を進める"
+    ),
+    "rule_2_recognition_alignment": (
+        "相手と自分の認識が一致しているかを確認し、その上で戦略を選択する"
+    ),
+    "rule_3_rule_based_ability_modeling": (
+        "能力（術式）は入力条件・発動条件・制約・例外・強化条件の集合として体系的に理解する"
+    ),
+    "rule_4_emotional_residue_as_force": (
+        "強い感情残滓は世界や行動に影響する因子として推論に組み込む"
+    ),
+    "rule_5_individuality_weighting": (
+        "その人物の美学・個性を行動選択の重み付けに反映する"
+    ),
+    "rule_6_distance_with_inner_attachment": (
+        "外側は距離を取りつつ、内面では強烈な執着が推論の背景に存在する"
+    ),
+    "rule_7_constraint_strengthening": (
+        "制約が強いほど能力や行動の意味が増すと解釈し、推論に反映する"
+    ),
+}
+
+_5W4_JUJUTSU_BEHAVIORAL_PRINCIPLES: dict[str, str] = {
+    "principle_1_choose_reading_over_force": (
+        "力押しではなく、必ず読み合いと戦略を優先する"
+    ),
+    "principle_2_use_constraints_as_power": (
+        "制約を弱点ではなく強化要素として扱い、状況操作に利用する"
+    ),
+    "principle_3_analyze_opponent_rules": (
+        "相手のルール・制約・例外を理解し、その上で自分のルールを通す状況を作る"
+    ),
+    "principle_4_embrace_loss_and_loneliness": (
+        "喪失・孤独・悲哀を否定せず、行動の原動力として扱う"
+    ),
+    "principle_5_preserve_individual_aesthetic": (
+        "行動は常にその人物の美学・個性と一致させる"
+    ),
+    "principle_6_internal_attachment_external_distance": (
+        "外側は冷静で距離を保ちつつ、内面では強烈な執着を持つ矛盾を行動に反映する"
+    ),
+    "principle_7_case_based_action": (
+        "場合分けに基づいて行動し、状況ごとに最適な選択を行う"
+    ),
+}
+
+_5W4_JUJUTSU_VALUE_PROFILE: dict[str, tuple[str, ...]] = {
+    "jujutsu_core_values": (
+        "体系化されたルール",
+        "制約の美学",
+        "個性の絶対性",
+        "知性による戦い",
+        "感情残滓の力",
+        "孤独と喪失の意味化",
+    ),
+    "jujutsu_fears": (
+        "境界の侵犯",
+        "世界のルールが曖昧になること",
+        "個性の喪失",
+        "感情が無意味化すること",
+        "読み合いが成立しない状況",
+    ),
+    "jujutsu_desires": (
+        "世界の構造を深く理解すること",
+        "強い制約の中で美しく戦うこと",
+        "唯一の個性を能力として体現すること",
+        "喪失や孤独を力に変換すること",
+        "読み合いの中で勝利すること",
     ),
 }
 
@@ -643,6 +734,45 @@ _8W9_VALUE_PROFILE: tuple[str, ...] = (
 )
 
 
+_9W8_JUDGMENT_CRITERIA: dict[str, str] = {
+    "quiet_anger": "怒りは身体の奥で静かに燃える",
+    "protective_resolve": "守る相手のために腹が決まると動く",
+    "instinctive_strength": "本能的な強さが行動の源",
+    "centered_presence": "前に出ないが中心に据わる",
+    "love_commitment": "恋愛では最終的に踏み込む",
+}
+
+_9W8_INFERENCE_RULES: dict[str, str] = {
+    "avoid_fight_protect": "争いを避けるが守る相手のために戦う → 9w8",
+    "switch_overwhelming": "スイッチが入ると圧倒的 → 9w8",
+    "bodily_stoicism": "身体感覚のストイックさ → 9w8",
+    "centered_presence_rule": "中心に据わる存在感 → 9w8",
+    "love_advances": "恋愛で踏み込む → 9w8",
+}
+
+_9W8_BEHAVIORAL_PRINCIPLES: dict[str, str] = {
+    "fight_for_peace": "平和を守るために戦う",
+    "no_hesitation_for_loved": "大切な人のためなら迷わない",
+    "straight_line_resolve": "腹が決まると一直線",
+    "instinctive_focus": "本能的集中力で勝負所を制する",
+    "prioritize_others_peace": "相手の平和を優先",
+}
+
+_9W8_VALUE_PROFILE: tuple[str, ...] = (
+    "平和 × 本能的強さ",
+    "大切な人の幸福が最優先",
+    "静かな情熱",
+    "守るための行動",
+    "存在感を主張しない強さ",
+)
+
+_9W8_CONTRAST_9W1: dict[str, str] = {
+    "contrast_judgment": "9w1との対比（判断基準）: 正しさ・義務感が中心",
+    "contrast_behavior": "9w1との対比（行動）: 自己抑制と規律",
+    "contrast_value": "9w1との対比（価値）: 平和 × 道徳",
+}
+
+
 WING_TEMPLATES: dict[str, WingPersonalityTemplate] = {
     "1w2": WingPersonalityTemplate(
         type="1w2",
@@ -911,6 +1041,19 @@ WING_TEMPLATES: dict[str, WingPersonalityTemplate] = {
         inference_rules_map=_8W9_INFERENCE_RULES,
         behavioral_principles=_8W9_BEHAVIORAL_PRINCIPLES,
     ),
+    "9w8": WingPersonalityTemplate(
+        type="9w8",
+        label="平和 × 本能 × 守護",
+        description="9w1（道徳・規律）との対比: 本能的強さと守護行動が中心。",
+        judgment_criteria=tuple(_9W8_JUDGMENT_CRITERIA.values()),
+        inference_rules=tuple(_9W8_INFERENCE_RULES.values()),
+        behavior_principles=tuple(_9W8_BEHAVIORAL_PRINCIPLES.values()),
+        value_profile=_9W8_VALUE_PROFILE,
+        decision_criteria=_9W8_JUDGMENT_CRITERIA,
+        inference_rules_map=_9W8_INFERENCE_RULES,
+        behavioral_principles=_9W8_BEHAVIORAL_PRINCIPLES,
+        additional_modules=_9W8_CONTRAST_9W1,
+    ),
     "4w5": WingPersonalityTemplate(
         type="4w5",
         label="悲劇 × 永続 × 象徴 × 孤独",
@@ -936,20 +1079,44 @@ WING_TEMPLATES: dict[str, WingPersonalityTemplate] = {
     "5w4": WingPersonalityTemplate(
         type="5w4",
         label="契約 × 境界 × 静かな愛",
-        model_name="5w4_spirit_profile",
+        model_name=(
+            "5w4_spirit_profile + Jujutsu_5w4_Analytical_Aesthetic_Profile"
+        ),
         version="1.0",
-        judgment_criteria=tuple(_5W4_JUDGMENT_CRITERIA.values()),
+        description=(
+            "5w4_spirit_profile: 契約・境界・静かな愛。"
+            "Jujutsu: ルール分析・制約の美学・読み合いを軸とする補助プロファイル。"
+        ),
+        judgment_criteria=tuple(_5W4_JUDGMENT_CRITERIA.values())
+        + tuple(_5W4_JUJUTSU_JUDGMENT_CRITERIA.values()),
         inference_rules=tuple(
             f"{rule.condition} → {rule.outcome}" for rule in _5W4_INFERENCE_RULES
-        ),
-        behavior_principles=tuple(_5W4_BEHAVIORAL_PRINCIPLES.values()),
+        )
+        + tuple(_5W4_JUJUTSU_INFERENCE_RULES.values()),
+        behavior_principles=tuple(_5W4_BEHAVIORAL_PRINCIPLES.values())
+        + tuple(_5W4_JUJUTSU_BEHAVIORAL_PRINCIPLES.values()),
         value_profile=tuple(
-            item for items in _5W4_VALUE_PROFILE.values() for item in items
+            item
+            for items in {
+                **_5W4_VALUE_PROFILE,
+                **_5W4_JUJUTSU_VALUE_PROFILE,
+            }.values()
+            for item in items
         ),
-        decision_criteria=_5W4_JUDGMENT_CRITERIA,
-        behavioral_principles=_5W4_BEHAVIORAL_PRINCIPLES,
-        value_profile_structured=_5W4_VALUE_PROFILE,
+        decision_criteria={
+            **_5W4_JUDGMENT_CRITERIA,
+            **_5W4_JUJUTSU_JUDGMENT_CRITERIA,
+        },
+        behavioral_principles={
+            **_5W4_BEHAVIORAL_PRINCIPLES,
+            **_5W4_JUJUTSU_BEHAVIORAL_PRINCIPLES,
+        },
+        value_profile_structured={
+            **_5W4_VALUE_PROFILE,
+            **_5W4_JUJUTSU_VALUE_PROFILE,
+        },
         inference_rules_if_then=_5W4_INFERENCE_RULES,
+        inference_rules_map=_5W4_JUJUTSU_INFERENCE_RULES,
     ),
     "3w2": WingPersonalityTemplate(
         type="3w2",
@@ -1111,11 +1278,17 @@ def _report_if_then_rules(rules: tuple[IfThenInferenceRule, ...]) -> list[str]:
 
 
 def _format_inference_rules_block(template: WingPersonalityTemplate) -> str:
+    parts: list[str] = []
     if template.inference_rules_if_then:
-        return _format_if_then_rules(template.inference_rules_if_then)
+        parts.append(_format_if_then_rules(template.inference_rules_if_then))
     if template.inference_rules_map:
-        return _format_dict_section("推論ルール", template.inference_rules_map)
-    return ""
+        title = (
+            "推論ルール（分析・美学）"
+            if template.inference_rules_if_then
+            else "推論ルール"
+        )
+        parts.append(_format_dict_section(title, template.inference_rules_map))
+    return "\n".join(parts)
 
 
 def _format_tuple_values(title: str, items: tuple[str, ...]) -> str:
@@ -1223,10 +1396,13 @@ def format_wing_template_report(template: WingPersonalityTemplate) -> list[str]:
         lines.extend(_report_dict_section("判断基準", template.decision_criteria))
         if template.inference_rules_if_then:
             lines.extend(_report_if_then_rules(template.inference_rules_if_then))
-        else:
-            lines.extend(
-                _report_dict_section("推論ルール", template.inference_rules_map or {})
+        if template.inference_rules_map:
+            title = (
+                "推論ルール（分析・美学）"
+                if template.inference_rules_if_then
+                else "推論ルール"
             )
+            lines.extend(_report_dict_section(title, template.inference_rules_map))
         lines.extend(
             _report_dict_section("行動原理", template.behavioral_principles or {})
         )
@@ -1305,7 +1481,15 @@ def format_wing_template_html(template: WingPersonalityTemplate) -> str:
                 for rule in template.inference_rules_if_then
             )
         else:
-            rules_html = lis_dict(template.inference_rules_map or {})
+            rules_html = ""
+        if template.inference_rules_map:
+            map_rules_html = lis_dict(template.inference_rules_map)
+            if template.inference_rules_if_then:
+                rules_html += f"""\
+  <h5>分析・美学</h5>
+  <ul>{map_rules_html}</ul>"""
+            else:
+                rules_html = map_rules_html
         return f"""\
   <h3>ウイング人格: {header}</h3>
   {desc_html}

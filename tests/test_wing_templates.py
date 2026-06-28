@@ -37,7 +37,7 @@ def _base_profile(**overrides) -> EnneagramProfile:
 
 def test_all_requested_templates_exist() -> None:
     assert set(WING_TEMPLATES) == {
-        "1w2", "1w9", "2w1", "2w3", "3w2", "3w4", "5w4", "6w5", "7w6", "7w8", "8w7", "8w9", "4w3", "4w5",
+        "1w2", "1w9", "2w1", "2w3", "3w2", "3w4", "5w4", "6w5", "7w6", "7w8", "8w7", "8w9", "9w8", "4w3", "4w5",
     }
 
 
@@ -49,6 +49,7 @@ def test_wing_type_code() -> None:
     assert wing_type_code(6, 5) == "6w5"
     assert wing_type_code(8, 7) == "8w7"
     assert wing_type_code(8, 9) == "8w9"
+    assert wing_type_code(9, 8) == "9w8"
     assert wing_type_code(7, 8) == "7w8"
     assert wing_type_code(4, 3) == "4w3"
     assert wing_type_code(8, None) is None
@@ -107,6 +108,33 @@ def test_8w9_akio_template_in_instruction() -> None:
     report = format_report_plain(_base_profile(primary_type=8, wing=9))
     assert "8w9" in report
     assert "透明性と正直なコミュニケーション" in report
+
+
+def test_9w8_template_in_instruction() -> None:
+    template = get_wing_template(9, 8)
+    assert template is not None
+    assert template.label == "平和 × 本能 × 守護"
+    assert "身体の奥で静かに燃える" in template.decision_criteria["quiet_anger"]
+    assert "→ 9w8" in template.inference_rules_map["switch_overwhelming"]
+    assert "腹が決まると一直線" in template.behavioral_principles["straight_line_resolve"]
+    assert template.additional_modules is not None
+    assert "9w1との対比（判断基準）" in template.additional_modules["contrast_judgment"]
+
+    session = Session.create()
+    session.enneagram = _base_profile(primary_type=9, wing=8)
+    session.phase = ConversationPhase.CORE
+
+    instruction = get_enneagram_instruction(session)
+    assert instruction is not None
+    assert "9w8" in instruction
+    assert "平和 × 本能 × 守護" in instruction
+    assert "スイッチが入ると圧倒的" in instruction
+    assert "9w1との対比（行動）" in instruction
+
+    report = format_report_plain(_base_profile(primary_type=9, wing=8))
+    assert "9w8" in report
+    assert "存在感を主張しない強さ" in report
+    assert "平和 × 道徳" in report
 
 
 def test_7w6_fukumoto_template() -> None:
@@ -289,14 +317,22 @@ def test_2w1_template_in_instruction() -> None:
 def test_5w4_spirit_profile() -> None:
     template = get_wing_template(5, 4)
     assert template is not None
-    assert template.model_name == "5w4_spirit_profile"
+    assert template.model_name == (
+        "5w4_spirit_profile + Jujutsu_5w4_Analytical_Aesthetic_Profile"
+    )
     assert template.version == "1.0"
     assert template.label == "契約 × 境界 × 静かな愛"
     assert "契約・原則・境界線" in template.decision_criteria["contract_priority"]
+    assert "rule_consistency" in template.decision_criteria
+    assert "制約が強いほど美学的価値" in template.decision_criteria["constraint_beauty"]
     assert template.inference_rules_if_then is not None
     assert len(template.inference_rules_if_then) == 6
     assert template.inference_rules_if_then[0].condition == "契約が破られた"
+    assert template.inference_rules_map is not None
+    assert "条件分岐で整理" in template.inference_rules_map["rule_1_conditional_branching"]
     assert "core_values" in template.value_profile_structured
+    assert "jujutsu_core_values" in template.value_profile_structured
+    assert "制約の美学" in template.value_profile_structured["jujutsu_core_values"]
     assert "愛によって壊れること" in template.value_profile_structured["fears"]
 
     session = Session.create()
@@ -305,13 +341,17 @@ def test_5w4_spirit_profile() -> None:
     instruction = get_enneagram_instruction(session)
     assert instruction is not None
     assert "5w4" in instruction
-    assert "5w4_spirit_profile" in instruction
+    assert "Jujutsu_5w4_Analytical_Aesthetic_Profile" in instruction
     assert "契約が破られた →" in instruction
+    assert "推論ルール（分析・美学）" in instruction
+    assert "読み合いと戦略を優先" in instruction
     assert "コア価値" in instruction
+    assert "分析・美学（コア価値）" in instruction
 
     report = format_report_plain(_base_profile(primary_type=5, wing=4))
-    assert "5w4_spirit_profile" in report
+    assert "Jujutsu_5w4_Analytical_Aesthetic_Profile" in report
     assert "愛のスタイル" in report
+    assert "読み合いが成立しない状況" in report
 
 
 def test_4w5_deepsoul_template() -> None:

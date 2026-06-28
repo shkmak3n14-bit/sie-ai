@@ -710,7 +710,9 @@ def _render_results() -> None:
             if wing_template.inference_rules_if_then:
                 for rule in wing_template.inference_rules_if_then:
                     st.markdown(f"- {rule.condition} → {rule.outcome}")
-            elif wing_template.inference_rules_map:
+            if wing_template.inference_rules_map:
+                if wing_template.inference_rules_if_then:
+                    st.markdown("*分析・美学*")
                 for item in wing_template.inference_rules_map.values():
                     st.markdown(f"- {item}")
             st.markdown("**行動原理**")
