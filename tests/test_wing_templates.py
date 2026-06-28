@@ -37,7 +37,7 @@ def _base_profile(**overrides) -> EnneagramProfile:
 
 def test_all_requested_templates_exist() -> None:
     assert set(WING_TEMPLATES) == {
-        "1w2", "1w9", "2w1", "2w3", "3w2", "3w4", "5w4", "6w5", "7w6", "7w8", "8w7", "8w9", "9w8", "4w3", "4w5",
+        "1w2", "1w9", "2w1", "2w3", "3w2", "3w4", "5w4", "5w6", "6w5", "6w7", "7w6", "7w8", "8w7", "8w9", "9w1", "9w8", "4w3", "4w5",
     }
 
 
@@ -47,9 +47,11 @@ def test_wing_type_code() -> None:
     assert wing_type_code(2, 1) == "2w1"
     assert wing_type_code(2, 3) == "2w3"
     assert wing_type_code(6, 5) == "6w5"
+    assert wing_type_code(6, 7) == "6w7"
     assert wing_type_code(8, 7) == "8w7"
     assert wing_type_code(8, 9) == "8w9"
     assert wing_type_code(9, 8) == "9w8"
+    assert wing_type_code(9, 1) == "9w1"
     assert wing_type_code(7, 8) == "7w8"
     assert wing_type_code(4, 3) == "4w3"
     assert wing_type_code(8, None) is None
@@ -64,7 +66,7 @@ def test_get_wing_template_lookup() -> None:
 
 def test_get_wing_template_unknown_returns_none() -> None:
     assert get_wing_template(8, 6) is None
-    assert get_wing_template(5, 6) is None
+    assert get_wing_template(2, 9) is None
 
 
 def test_core_phase_includes_wing_template() -> None:
@@ -135,6 +137,34 @@ def test_9w8_template_in_instruction() -> None:
     assert "9w8" in report
     assert "存在感を主張しない強さ" in report
     assert "平和 × 道徳" in report
+
+
+def test_9w1_natsume_template() -> None:
+    template = get_wing_template(9, 1)
+    assert template is not None
+    assert template.model_name == "Natsume_Takashi_9w1"
+    assert template.label == "調和 × 共感 × 静かな倫理"
+    assert "調和を保つ" in template.decision_criteria["harmony_maintenance"]
+    assert "悪意より恐れ" in template.inference_rules_map["fear_not_malice"]
+    assert "怒りから行動しない" in template.behavioral_principles["no_anger_action"]
+    assert "natsume_core" in template.value_profile_structured
+    assert "静かな倫理" in template.value_profile_structured["natsume_core"]
+
+    session = Session.create()
+    session.enneagram = _base_profile(primary_type=9, wing=1)
+    session.phase = ConversationPhase.CORE
+
+    instruction = get_enneagram_instruction(session)
+    assert instruction is not None
+    assert "9w1" in instruction
+    assert "Natsume_Takashi_9w1" in instruction
+    assert "調和 × 共感 × 静かな倫理" in instruction
+    assert "最小限に介入" in instruction
+    assert "運用原則" in instruction
+
+    report = format_report_plain(_base_profile(primary_type=9, wing=1))
+    assert "9w1" in report
+    assert "選択の尊重" in report
 
 
 def test_7w6_fukumoto_template() -> None:
@@ -268,6 +298,37 @@ def test_1w2_template_in_instruction() -> None:
     assert "継承の義務" in report
 
 
+def test_6w7_harry_potter_template() -> None:
+    template = get_wing_template(6, 7)
+    assert template is not None
+    assert template.model_name == "Harry_Potter_6w7"
+    assert template.label == "忠誠 × 警戒 × 希望"
+    assert template.core_themes is not None
+    assert "信じたいが疑う" in template.core_themes["loyalty_vs_doubt"]
+    assert "言動の一貫性" in template.decision_criteria["trustworthiness"]
+    assert "不安ループ" in template.inference_rules_map["anxiety_loop"]
+    assert "軽さの仮面" in template.behavioral_principles["lightness_mask"]
+    assert "loyalty_and_trust" in template.value_profile_structured
+    assert "裏切り" in template.value_profile_structured["loyalty_and_trust"]
+
+    session = Session.create()
+    session.enneagram = _base_profile(primary_type=6, wing=7)
+    session.phase = ConversationPhase.CORE
+
+    instruction = get_enneagram_instruction(session)
+    assert instruction is not None
+    assert "6w7" in instruction
+    assert "Harry_Potter_6w7" in instruction
+    assert "忠誠 × 警戒 × 希望" in instruction
+    assert "コアテーマ" in instruction
+    assert "安全確保と冒険心の両立" in instruction
+    assert "準備付き冒険" in instruction
+
+    report = format_report_plain(_base_profile(primary_type=6, wing=7))
+    assert "6w7" in report
+    assert "恐怖を勇気の源に変換" in report
+
+
 def test_6w5_template_in_instruction() -> None:
     session = Session.create()
     session.enneagram = _base_profile(primary_type=6, wing=5)
@@ -354,6 +415,34 @@ def test_5w4_spirit_profile() -> None:
     assert "読み合いが成立しない状況" in report
 
 
+def test_5w6_oreki_template() -> None:
+    template = get_wing_template(5, 6)
+    assert template is not None
+    assert template.model_name == "Hyouka_5w6_Oreki"
+    assert template.label == "氷菓型5w6（折木奉太郎モデル）"
+    assert "最小化" in template.decision_criteria["energy_minimization"]
+    assert "証拠を優先" in template.inference_rules_map["evidence_first"]
+    assert "必要以上には関わらない" in template.behavioral_principles["limited_involvement"]
+    assert template.additional_modules is not None
+    assert "省エネ最適化" in template.additional_modules["core_logic"]
+
+    session = Session.create()
+    session.enneagram = _base_profile(primary_type=5, wing=6)
+    session.phase = ConversationPhase.CORE
+
+    instruction = get_enneagram_instruction(session)
+    assert instruction is not None
+    assert "5w6" in instruction
+    assert "Hyouka_5w6_Oreki" in instruction
+    assert "折木奉太郎" in instruction
+    assert "本当に必要か" in instruction
+    assert "追加モジュール" in instruction
+
+    report = format_report_plain(_base_profile(primary_type=5, wing=6))
+    assert "5w6" in report
+    assert "必要なことだけを行う" in report
+
+
 def test_4w5_deepsoul_template() -> None:
     template = get_wing_template(4, 5)
     assert template is not None
@@ -424,10 +513,47 @@ def test_4w3_saint_exupery_merged_template() -> None:
     assert "あるべき」を拒む" in instruction
 
 
+def test_7w8_adventurer_template() -> None:
+    template = get_wing_template(7, 8)
+    assert template is not None
+    assert template.model_name == "攻めの知性・実験型冒険者 + 享楽×破滅×突破"
+    assert template.label == "攻めの知性・実験型冒険者"
+    assert "どれだけ楽しめるか" in template.decision_criteria["fun_maximization"]
+    assert "legacy_boredom_enemy" in template.decision_criteria
+    assert "（享楽×破滅×突破）" in template.decision_criteria["legacy_father_absence"]
+    assert "失敗は素材" in template.inference_rules_map["failure_as_data"]
+    assert "破滅の予兆があるほど" in template.inference_rules_map["legacy_ruin_pull"]
+    assert "地獄を笑いながら突破" in template.behavioral_principles["enjoying_adversity"]
+    assert "父性の代替を求める" in template.behavioral_principles["legacy_seek_father"]
+    assert template.value_profile_map is not None
+    assert "逆境を物語を面白くするスパイス" in template.value_profile_map["adversity_aesthetics"]
+    assert "破滅の美学（享楽×破滅×突破）" in template.value_profile_map["legacy_ruin_aesthetics"]
+
+    session = Session.create()
+    session.enneagram = _base_profile(primary_type=7, wing=8)
+    session.phase = ConversationPhase.CORE
+
+    instruction = get_enneagram_instruction(session)
+    assert instruction is not None
+    assert "7w8" in instruction
+    assert "攻めの知性・実験型冒険者 + 享楽×破滅×突破" in instruction
+    assert "攻めの知性・実験型冒険者" in instruction
+    assert "自力で突破できるルート" in instruction
+    assert "試す・壊す・学ぶ" in instruction
+    assert "享楽×破滅×突破" in instruction
+    assert "喪失が起きると逃避または爆発" in instruction
+
+    report = format_report_plain(_base_profile(primary_type=7, wing=8))
+    assert "7w8" in report
+    assert "判断基準" in report
+    assert "新しい発見に価値を置く" in report
+    assert "父性への潜在的渇望" in report
+
+
 def test_report_includes_wing_template() -> None:
     profile = _base_profile(primary_type=7, wing=8)
     report = format_report_plain(profile)
     assert "7w8" in report
-    assert "享楽 × 破滅 × 突破" in report
+    assert "攻めの知性・実験型冒険者" in report
     assert "判断基準" in report
     assert "価値プロフィール" in report
