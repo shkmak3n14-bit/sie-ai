@@ -4,9 +4,13 @@ from __future__ import annotations
 
 import streamlit as st
 
+from sie.enneagram.ui import render_enneagram_assessment
+from sie.enneagram.types import get_type_info
+from sie.episode import RELATIONSHIP_ROLES, RelationshipEpisode, format_episode_user_message
 from sie.flow import ConversationPhase, is_closing_request
-from sie.llm import generate_closing, generate_greeting, generate_reply
+from sie.llm import generate_closing, generate_episode_analysis, generate_greeting, generate_reply
 from sie.session import Session
+from sie.styles import APP_CSS
 
 EXIT_COMMANDS = {"exit", "quit", "終了", "q"}
 
@@ -26,6 +30,14 @@ def _init_session() -> None:
     st.session_state.display_messages: list[dict[str, str]] = []
     st.session_state.session_ended = False
     st.session_state.initialized = False
+    _sync_enneagram_to_session()
+
+
+def _sync_enneagram_to_session() -> None:
+    """Attach Enneagram profile from UI state to the active S.I.E. session."""
+    if "sie_session" not in st.session_state:
+        return
+    st.session_state.sie_session.enneagram = st.session_state.get("enneagram_profile")
 
 
 def _reset_session() -> None:
@@ -91,6 +103,96 @@ def _handle_user_input(user_input: str) -> None:
     )
 
 
+def _handle_episode_submit(episode: RelationshipEpisode) -> None:
+    user_message = format_episode_user_message(episode)
+    st.session_state.display_messages.append(
+        {"role": "user", "content": user_message}
+    )
+
+    session: Session = st.session_state.sie_session
+
+    try:
+        with st.spinner("サイがエピソードを分析しています…"):
+            reply = generate_episode_analysis(session, episode, user_message)
+    except ValueError as exc:
+        st.session_state.display_messages.pop()
+        st.error(str(exc))
+        return
+    except Exception as exc:
+        st.session_state.display_messages.pop()
+        st.error(f"エラー: {exc}")
+        return
+
+    st.session_state.display_messages.append(
+        {"role": "assistant", "content": reply}
+    )
+
+
+def _render_episode_form() -> None:
+    with st.expander("エピソードを共有する", expanded=False):
+        st.caption(
+            "人間関係の出来事を入力すると、サイが6つの観点から分析します。"
+        )
+
+        col1, col2 = st.columns(2)
+        with col1:
+            subject_name = st.text_input(
+                "1. ○○さんが",
+                placeholder="名前（例：太郎）",
+                key="episode_subject_name",
+            )
+            subject_role = st.selectbox(
+                "　関係（主語）",
+                RELATIONSHIP_ROLES,
+                key="episode_subject_role",
+            )
+        with col2:
+            target_name = st.text_input(
+                "2. ○○さんに",
+                placeholder="名前（例：花子）",
+                key="episode_target_name",
+            )
+            target_role = st.selectbox(
+                "　関係（対象）",
+                RELATIONSHIP_ROLES,
+                key="episode_target_role",
+            )
+
+        action = st.text_area(
+            "3. 何を言った / 何をした",
+            placeholder="例：突然厳しい口調で注意した",
+            height=80,
+            key="episode_action",
+        )
+        user_reaction = st.text_area(
+            "4. あなたはどう思ったか / どのような行動をしたか",
+            placeholder="例：傷ついたが、黙って受け止めた",
+            height=80,
+            key="episode_user_reaction",
+        )
+
+        if st.button("サイに分析してもらう", use_container_width=True, type="primary"):
+            if not subject_name.strip():
+                st.error("1. の名前を入力してください。")
+            elif not target_name.strip():
+                st.error("2. の名前を入力してください。")
+            elif not action.strip():
+                st.error("3. を入力してください。")
+            elif not user_reaction.strip():
+                st.error("4. を入力してください。")
+            else:
+                episode = RelationshipEpisode(
+                    subject_name=subject_name.strip(),
+                    subject_role=subject_role,
+                    target_name=target_name.strip(),
+                    target_role=target_role,
+                    action=action.strip(),
+                    user_reaction=user_reaction.strip(),
+                )
+                _handle_episode_submit(episode)
+                st.rerun()
+
+
 def main() -> None:
     st.set_page_config(
         page_title="S.I.E.（サイ）",
@@ -98,70 +200,19 @@ def main() -> None:
         layout="centered",
     )
 
-    st.markdown(
-        """
-        <style>
-        .stApp {
-            background: linear-gradient(180deg, #0f1419 0%, #1a2332 100%);
-            color: #e8eef4;
-        }
-        .stApp p, .stApp span, .stApp label, .stApp li, .stApp div {
-            color: #e8eef4;
-        }
-        [data-testid="stSidebar"] {
-            background-color: #151d28;
-        }
-        [data-testid="stSidebar"] p,
-        [data-testid="stSidebar"] span,
-        [data-testid="stSidebar"] label,
-        [data-testid="stSidebar"] div {
-            color: #e8eef4;
-        }
-        [data-testid="stChatMessage"] {
-            background-color: rgba(255, 255, 255, 0.06);
-            border-radius: 12px;
-            padding: 0.5rem;
-        }
-        [data-testid="stChatMessageContent"] p,
-        [data-testid="stChatMessageContent"] span,
-        [data-testid="stChatMessageContent"] li {
-            color: #f5f8fc;
-        }
-        [data-testid="stCaptionContainer"] p {
-            color: #a8bccf;
-        }
-        [data-testid="stBottom"],
-        [data-testid="stBottomBlockContainer"],
-        [data-testid="stBottom"] > div {
-            background-color: #0f1419;
-        }
-        [data-testid="stChatInput"] {
-            background-color: #ffffff;
-            border-color: #cccccc;
-            color: #000000;
-            caret-color: #000000;
-        }
-        [data-testid="stChatInput"] textarea {
-            color: #000000 !important;
-            background-color: #ffffff !important;
-            caret-color: #000000;
-        }
-        [data-testid="stChatInput"] textarea::placeholder {
-            color: rgba(0, 0, 0, 0.45) !important;
-        }
-        [data-testid="stChatInput"] button {
-            color: #000000;
-        }
-        h1 { color: #b8d4f0; font-weight: 300; }
-        h3 { color: #c8dff5; }
-        .sie-caption { color: #a8bccf; font-size: 0.9rem; }
-        </style>
-        """,
-        unsafe_allow_html=True,
-    )
+    st.markdown(APP_CSS, unsafe_allow_html=True)
 
     if "sie_session" not in st.session_state:
         _init_session()
+    else:
+        _sync_enneagram_to_session()
+
+    if "app_mode" not in st.session_state:
+        st.session_state.app_mode = "会話"
+
+    if st.session_state.pop("full_initialize_requested", False):
+        _reset_session()
+        st.session_state.app_mode = "会話"
 
     with st.sidebar:
         st.markdown("### S.I.E.（サイ）")
@@ -169,6 +220,23 @@ def main() -> None:
             '<p class="sie-caption">Support Intelligence on Ego</p>',
             unsafe_allow_html=True,
         )
+        st.divider()
+
+        st.session_state.app_mode = st.radio(
+            "画面",
+            ["会話", "エニアグラム診断"],
+            index=0 if st.session_state.app_mode == "会話" else 1,
+        )
+
+        if st.session_state.get("enneagram_profile"):
+            profile = st.session_state.enneagram_profile
+            type_info = get_type_info(profile.primary_type)
+            st.divider()
+            st.markdown("**診断結果**")
+            st.caption(type_info.name)
+            if profile.wing:
+                st.caption(f"ウイング: {profile.wing}")
+
         st.divider()
 
         session: Session = st.session_state.sie_session
@@ -187,6 +255,10 @@ def main() -> None:
             unsafe_allow_html=True,
         )
 
+    if st.session_state.app_mode == "エニアグラム診断":
+        render_enneagram_assessment()
+        return
+
     st.title("S.I.E.（サイ）")
     st.caption("落ち着いた声で、核心を静かに伝える")
 
@@ -196,6 +268,8 @@ def main() -> None:
     if st.session_state.session_ended:
         st.info("セッションは終了しました。サイドバーから新しいセッションを始められます。")
         return
+
+    _render_episode_form()
 
     session = st.session_state.sie_session
     placeholder = "なんとお呼びすればいいですか？"
