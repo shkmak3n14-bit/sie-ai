@@ -47,6 +47,8 @@ _VALUE_PROFILE_LABELS: dict[str, str] = {
     "positive_values": "肯定的価値",
     "shadow_values": "影の側面",
     "profile_core": "根底の価値",
+    "father_profile": "Father",
+    "brother_profile": "Brother",
 }
 
 
@@ -113,6 +115,34 @@ _7W6_VALUE_PROFILE: dict[str, tuple[str, ...]] = {
         "努力しないで文句を言う態度",
         "自分の恐怖に飲まれること",
     ),
+    "father_profile": (
+        "理想化された未来（退隠・趣味・調和した家族）",
+        "社会的評判と面子",
+        "予測可能性と感情的安全",
+        "個人の尊厳の維持",
+    ),
+}
+
+
+_7W6_FATHER_DECISION_CRITERIA: dict[str, str] = {
+    "father_social_reputation": "社会的評価と外見上の評価（Father）",
+    "father_future_plans": "個人の将来計画との整合性（Father）",
+    "father_uncertainty_avoidance": "不確実性と感情的不安定の回避（Father）",
+    "father_family_dignity": "家族の前での尊厳と権威の維持（Father）",
+}
+
+_7W6_FATHER_INFERENCE_RULES: dict[str, str] = {
+    "father_plan_collapse": "計画が崩れると、自己価値への脅威と解釈する（Father）",
+    "father_evaluation_anxiety": "外評が下がるほど不安が増す（Father）",
+    "father_silence_coping": "失望は沈黙という対処機制で処理する（Father）",
+    "father_family_script": "家族の行動は個人の人生脚本との整合で評価する（Father）",
+}
+
+_7W6_FATHER_BEHAVIORAL_PRINCIPLES: dict[str, str] = {
+    "father_ideal_future": "理想化した未来のシナリオに固執する（Father）",
+    "father_silence_chaos": "内的混乱を沈黙で管理する（Father）",
+    "father_avoid_vulnerability": "弱さや脆弱性を見せない（Father）",
+    "father_externalize": "限界を超えると責任を外在化する（Father）",
 }
 
 
@@ -329,6 +359,42 @@ _4W3_VALUE_PROFILE: dict[str, tuple[str, ...]] = {
         "象徴として存在が残ること",
         "喪失の意味づけ",
     ),
+    "brother_profile": (
+        "独自性と個性",
+        "深い感情体験",
+        "表現の自由",
+        "聖域としての孤独",
+        "同調より真正性",
+    ),
+}
+
+
+_4W3_BROTHER_JUDGMENT_CRITERIA: dict[str, str] = {
+    "brother_individuality": "個性と独自性の保持（Brother）",
+    "brother_emotional_authenticity": "感情・体験の真正な表現（Brother）",
+    "brother_freedom_from_norms": "押し付けられた規範や硬直した期待からの自由（Brother）",
+    "brother_aesthetic_meaning": "美学的一貫性と個人的意味（Brother）",
+    "brother_comparative_identity": "他者との対比による自己定義（Brother）",
+}
+
+_4W3_BROTHER_INFERENCE_RULES: dict[str, str] = {
+    "brother_conformity_threat": "他者と同調すると個性が脅かされる（Brother）",
+    "brother_symbolic_expression": "異常・象徴的行動は内なる真実を表す（Brother）",
+    "brother_conformity_resistance": "同調を強いる外的圧力は感情的抵抗を生む（Brother）",
+    "brother_solitude_authenticity": "孤独は真正性と感情の深さを守る（Brother）",
+    "brother_family_retreat": "家族の対立は個人的世界への退避を正当化する（Brother）",
+}
+
+_4W3_BROTHER_BEHAVIORAL_PRINCIPLES: dict[str, str] = {
+    "brother_unconventional_expression": (
+        "内なる独自性を示すため非伝統的にも行動する（Brother）"
+    ),
+    "brother_retreat_rigid_expectations": (
+        "硬直した期待に直面すると内向きに退く（Brother）"
+    ),
+    "brother_symbolic_aesthetic": "象徴的・美的ジェスチャーで同一性を表現する（Brother）",
+    "brother_solitude_depth": "孤独を通じて感情の深さを維持する（Brother）",
+    "brother_reject_should_norms": "押し付けられた規範、特に「あるべき」を拒む（Brother）",
 }
 
 
@@ -483,6 +549,100 @@ _3W4_VALUE_PROFILE: tuple[str, ...] = (
 )
 
 
+_1W9_JUDGMENT_CRITERIA: dict[str, str] = {
+    "moral_duty": "道徳的正しさと義務の履行",
+    "should_be_adherence": "「あるべき姿」への適合（秩序・正しさ・予測可能性）",
+    "chaos_avoidance": "混沌・不確実性・規範からの逸脱の回避",
+    "harmony_suppression": "対立と感情を抑えて調和を維持する",
+    "family_expectations": "家族からの期待への応答",
+    "mistake_prevention": "危険や混乱につながる過ちの防止",
+}
+
+_1W9_INFERENCE_RULES: dict[str, str] = {
+    "conflict_responsibility": "対立が起きると個人的責任を負う",
+    "anger_suppression_overflow": (
+        "怒りは溢れるまで抑制され、その後爆発的に放出される"
+    ),
+    "duty_equals_worth": "義務の履行＝自己の価値",
+    "conflict_avoidance_stability": "対立回避は家族の安定を保つ",
+    "deviation_as_danger": "期待された行動からの逸脱は危険または無責任の兆候",
+    "hidden_as_dishonesty": "隠された行動は不正または不透明さを示す",
+    "imperfection_triggers_responsibility": "不完全さがあれば個人的責任が発動する",
+    "revisit_past_failures": "過去の失敗は再検討し、再発を防ぐ",
+    "justify_imperfection": "完璧に遂行できない場合、不完全さを正当化する理由を探す",
+}
+
+_1W9_BEHAVIORAL_PRINCIPLES: dict[str, str] = {
+    "suppress_for_order": "秩序維持のために感情を抑制する",
+    "duty_over_needs": "個人的ニーズより義務を優先する",
+    "avoid_direct_conflict": "直接対立を避け、プレッシャーを吸収する",
+    "self_sacrifice_harmony": "調和維持のために自己犠牲する",
+    "correct_deviation": "規範から逸脱した行動を正す（特に子どもに対して）",
+    "over_explain_imperfection": "不完全さと内部基準の間に理由や言い訳を過剰に説明する",
+    "repeat_grievances": "感情的に決着できない未解決の恨みを繰り返す",
+    "hide_preferences": "道徳的一貫性のために個人的嗜好を表に出さない",
+    "order_compensates_chaos": "幼少期の混沌を補うために秩序と清潔さを維持する",
+    "over_responsibility": "早期の養育経験による過剰な責任感",
+}
+
+_1W9_VALUE_PROFILE: tuple[str, ...] = (
+    "家族の調和",
+    "秩序・予測可能性と道徳的正しさ",
+    "義務と責任（特に家族に対して）",
+    "調和のための感情抑制",
+    "混沌と逸脱の回避",
+    "不必要でもタスクの完璧さ",
+    "規則の厳守による安全",
+    "他者からの期待への応答",
+)
+
+
+_8W9_JUDGMENT_CRITERIA: dict[str, str] = {
+    "structural_understanding": "人間行動と感情パターンの構造的理解",
+    "distilled_truth": "悪意のない本質的な真実",
+    "cycle_assessment": "人間サイクルの評価（正 vs 負）",
+    "emotional_reading": "感情温度と隠れた動機の読み取り",
+    "transparency_honesty": "透明性と正直さの有無の評価",
+}
+
+_8W9_INFERENCE_RULES: dict[str, str] = {
+    "internal_programs": (
+        "人間は幼少期パターンにより形成された内部プログラムに基づいて動く"
+    ),
+    "truth_without_aggression": "攻撃性のない真実は感情状態を変えうる",
+    "shadow_humor": "影の側面はユーモアで優しく触れるべき",
+    "negative_cycle_intervention": (
+        "負のサイクルにある者には支援的介入で均衡を回復できる"
+    ),
+    "positive_cycle_amplify": "正のサイクルにある者の個性を増幅すべき",
+    "transparency_reduces_conflict": (
+        "透明性は対立を減らし、隠れた緊張は誤解を増やす"
+    ),
+    "monitor_self_merging": "融合傾向を監視し、自律の喪失を避ける",
+}
+
+_8W9_BEHAVIORAL_PRINCIPLES: dict[str, str] = {
+    "instant_analysis": "他者のタイプ・恐れ・サイクルを瞬時に分析する",
+    "neutral_distilled_truth": "感情的中立性を保ちつつ蒸留された真実を提供する",
+    "humor_soften_defenses": "心理的防御を和らげるためにユーモアを用いる",
+    "mediate_balance": "緊張を調停し関係の均衡を回復する",
+    "adapt_communication": "不必要な対立を避けるようコミュニケーションを適応させる",
+    "observe_program_patterns": (
+        "人間行動を構造化されたパターン（プログラム的）として観察する"
+    ),
+    "shift_negative_cycles": "負のサイクルを正のサイクルへ転換するために介入する",
+}
+
+_8W9_VALUE_PROFILE: tuple[str, ...] = (
+    "構造的明晰さと心理的真実",
+    "サイクル改善と感情の安定化",
+    "影への優しい介入",
+    "自律と個人的な力",
+    "役割を超えて人間を理解する（「その人」を見る）",
+    "透明性と正直なコミュニケーション",
+)
+
+
 WING_TEMPLATES: dict[str, WingPersonalityTemplate] = {
     "1w2": WingPersonalityTemplate(
         type="1w2",
@@ -521,6 +681,19 @@ WING_TEMPLATES: dict[str, WingPersonalityTemplate] = {
             "選択的な厳しさ（正義領域のみ厳格）",
             "自己犠牲的な献身",
         ),
+    ),
+    "1w9": WingPersonalityTemplate(
+        type="1w9",
+        label="道徳 × 調和 × 抑制",
+        model_name="Mother_1w9",
+        description="秩序・完璧主義・感情抑制を軸とする母親型1w9。",
+        judgment_criteria=tuple(_1W9_JUDGMENT_CRITERIA.values()),
+        inference_rules=tuple(_1W9_INFERENCE_RULES.values()),
+        behavior_principles=tuple(_1W9_BEHAVIORAL_PRINCIPLES.values()),
+        value_profile=_1W9_VALUE_PROFILE,
+        decision_criteria=_1W9_JUDGMENT_CRITERIA,
+        inference_rules_map=_1W9_INFERENCE_RULES,
+        behavioral_principles=_1W9_BEHAVIORAL_PRINCIPLES,
     ),
     "2w1": WingPersonalityTemplate(
         type="2w1",
@@ -630,17 +803,33 @@ WING_TEMPLATES: dict[str, WingPersonalityTemplate] = {
     "7w6": WingPersonalityTemplate(
         type="7w6",
         label="刺激 × 楽観 × 忠誠",
-        model_name="Fukumoto-Style_7w6",
-        judgment_criteria=tuple(_7W6_DECISION_CRITERIA.values()),
-        inference_rules=tuple(_7W6_INFERENCE_RULES.values()),
-        behavior_principles=tuple(_7W6_BEHAVIORAL_PRINCIPLES.values()),
+        model_name="Fukumoto-Style_7w6 + Father",
+        description=(
+            "Fukumoto-Style: 刺激・賭け・忠誠の順位を軸とする7w6。"
+            "Father: 社会的評価・将来脚本・家族の前での尊厳を軸とする補助アーキタイプ。"
+        ),
+        judgment_criteria=tuple(_7W6_DECISION_CRITERIA.values())
+        + tuple(_7W6_FATHER_DECISION_CRITERIA.values()),
+        inference_rules=tuple(_7W6_INFERENCE_RULES.values())
+        + tuple(_7W6_FATHER_INFERENCE_RULES.values()),
+        behavior_principles=tuple(_7W6_BEHAVIORAL_PRINCIPLES.values())
+        + tuple(_7W6_FATHER_BEHAVIORAL_PRINCIPLES.values()),
         value_profile=tuple(
             f"{_VALUE_PROFILE_LABELS[key]}: {' / '.join(items)}"
             for key, items in _7W6_VALUE_PROFILE.items()
         ),
-        decision_criteria=_7W6_DECISION_CRITERIA,
-        inference_rules_map=_7W6_INFERENCE_RULES,
-        behavioral_principles=_7W6_BEHAVIORAL_PRINCIPLES,
+        decision_criteria={
+            **_7W6_DECISION_CRITERIA,
+            **_7W6_FATHER_DECISION_CRITERIA,
+        },
+        inference_rules_map={
+            **_7W6_INFERENCE_RULES,
+            **_7W6_FATHER_INFERENCE_RULES,
+        },
+        behavioral_principles={
+            **_7W6_BEHAVIORAL_PRINCIPLES,
+            **_7W6_FATHER_BEHAVIORAL_PRINCIPLES,
+        },
         value_profile_structured=_7W6_VALUE_PROFILE,
     ),
     "7w8": WingPersonalityTemplate(
@@ -708,6 +897,19 @@ WING_TEMPLATES: dict[str, WingPersonalityTemplate] = {
             "自立",
             "父性の創造",
         ),
+    ),
+    "8w9": WingPersonalityTemplate(
+        type="8w9",
+        label="構造 × 真実 × 調停",
+        model_name="Akio_8w9",
+        description="構造分析・真実・サイクル改善を軸とする8w9。",
+        judgment_criteria=tuple(_8W9_JUDGMENT_CRITERIA.values()),
+        inference_rules=tuple(_8W9_INFERENCE_RULES.values()),
+        behavior_principles=tuple(_8W9_BEHAVIORAL_PRINCIPLES.values()),
+        value_profile=_8W9_VALUE_PROFILE,
+        decision_criteria=_8W9_JUDGMENT_CRITERIA,
+        inference_rules_map=_8W9_INFERENCE_RULES,
+        behavioral_principles=_8W9_BEHAVIORAL_PRINCIPLES,
     ),
     "4w5": WingPersonalityTemplate(
         type="4w5",
@@ -779,16 +981,32 @@ WING_TEMPLATES: dict[str, WingPersonalityTemplate] = {
     "4w3": WingPersonalityTemplate(
         type="4w3",
         label="喪失 × 自意識 × 美学",
-        model_name="Saint-Exupery_4w3_Profile",
-        judgment_criteria=tuple(_4W3_JUDGMENT_CRITERIA.values()),
-        inference_rules=tuple(_4W3_INFERENCE_RULES.values()),
-        behavior_principles=tuple(_4W3_BEHAVIORAL_PRINCIPLES.values()),
+        model_name="Saint-Exupery_4w3_Profile + Brother",
+        description=(
+            "Saint-Exupéry: 象徴・物語・英雄性・社会的仮面を軸とする4w3。"
+            "Brother: 孤独・対比・家族からの退避を軸とする補助アーキタイプ。"
+        ),
+        judgment_criteria=tuple(_4W3_JUDGMENT_CRITERIA.values())
+        + tuple(_4W3_BROTHER_JUDGMENT_CRITERIA.values()),
+        inference_rules=tuple(_4W3_INFERENCE_RULES.values())
+        + tuple(_4W3_BROTHER_INFERENCE_RULES.values()),
+        behavior_principles=tuple(_4W3_BEHAVIORAL_PRINCIPLES.values())
+        + tuple(_4W3_BROTHER_BEHAVIORAL_PRINCIPLES.values()),
         value_profile=tuple(
             item for items in _4W3_VALUE_PROFILE.values() for item in items
         ),
-        decision_criteria=_4W3_JUDGMENT_CRITERIA,
-        inference_rules_map=_4W3_INFERENCE_RULES,
-        behavioral_principles=_4W3_BEHAVIORAL_PRINCIPLES,
+        decision_criteria={
+            **_4W3_JUDGMENT_CRITERIA,
+            **_4W3_BROTHER_JUDGMENT_CRITERIA,
+        },
+        inference_rules_map={
+            **_4W3_INFERENCE_RULES,
+            **_4W3_BROTHER_INFERENCE_RULES,
+        },
+        behavioral_principles={
+            **_4W3_BEHAVIORAL_PRINCIPLES,
+            **_4W3_BROTHER_BEHAVIORAL_PRINCIPLES,
+        },
         value_profile_structured=_4W3_VALUE_PROFILE,
     ),
 }

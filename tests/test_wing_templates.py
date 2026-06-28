@@ -37,16 +37,18 @@ def _base_profile(**overrides) -> EnneagramProfile:
 
 def test_all_requested_templates_exist() -> None:
     assert set(WING_TEMPLATES) == {
-        "1w2", "2w1", "2w3", "3w2", "3w4", "5w4", "6w5", "7w6", "7w8", "8w7", "4w3", "4w5",
+        "1w2", "1w9", "2w1", "2w3", "3w2", "3w4", "5w4", "6w5", "7w6", "7w8", "8w7", "8w9", "4w3", "4w5",
     }
 
 
 def test_wing_type_code() -> None:
     assert wing_type_code(1, 2) == "1w2"
+    assert wing_type_code(1, 9) == "1w9"
     assert wing_type_code(2, 1) == "2w1"
     assert wing_type_code(2, 3) == "2w3"
     assert wing_type_code(6, 5) == "6w5"
     assert wing_type_code(8, 7) == "8w7"
+    assert wing_type_code(8, 9) == "8w9"
     assert wing_type_code(7, 8) == "7w8"
     assert wing_type_code(4, 3) == "4w3"
     assert wing_type_code(8, None) is None
@@ -60,7 +62,7 @@ def test_get_wing_template_lookup() -> None:
 
 
 def test_get_wing_template_unknown_returns_none() -> None:
-    assert get_wing_template(8, 9) is None
+    assert get_wing_template(8, 6) is None
     assert get_wing_template(5, 6) is None
 
 
@@ -77,14 +79,50 @@ def test_core_phase_includes_wing_template() -> None:
     assert "推論ルール" in instruction
 
 
+def test_8w9_akio_template_in_instruction() -> None:
+    template = get_wing_template(8, 9)
+    assert template is not None
+    assert template.model_name == "Akio_8w9"
+    assert template.label == "構造 × 真実 × 調停"
+    assert "感情パターン" in template.decision_criteria["structural_understanding"]
+    assert "透明性" in template.decision_criteria["transparency_honesty"]
+    assert "幼少期パターン" in template.inference_rules_map["internal_programs"]
+    assert "個性を増幅" in template.inference_rules_map["positive_cycle_amplify"]
+    assert "コミュニケーションを適応" in template.behavioral_principles["adapt_communication"]
+    assert any("役割を超えて人間を理解" in item for item in template.value_profile)
+
+    session = Session.create()
+    session.enneagram = _base_profile(primary_type=8, wing=9)
+    session.phase = ConversationPhase.CORE
+
+    instruction = get_enneagram_instruction(session)
+    assert instruction is not None
+    assert "8w9" in instruction
+    assert "Akio_8w9" in instruction
+    assert "構造 × 真実 × 調停" in instruction
+    assert "正 vs 負" in instruction
+    assert "ユーモアで優しく触れる" in instruction
+    assert "透明性は対立を減らし" in instruction
+
+    report = format_report_plain(_base_profile(primary_type=8, wing=9))
+    assert "8w9" in report
+    assert "透明性と正直なコミュニケーション" in report
+
+
 def test_7w6_fukumoto_template() -> None:
     template = get_wing_template(7, 6)
     assert template is not None
-    assert template.model_name == "Fukumoto-Style_7w6"
+    assert template.model_name == "Fukumoto-Style_7w6 + Father"
     assert template.label == "刺激 × 楽観 × 忠誠"
     assert "退屈より刺激を優先する" in template.decision_criteria["stimulus_priority"]
     assert "likes" in template.value_profile_structured
     assert "退屈・停滞" in template.value_profile_structured["dislikes"]
+    assert "father_social_reputation" in template.decision_criteria
+    assert "（Father）" in template.decision_criteria["father_family_dignity"]
+    assert "father_profile" in template.value_profile_structured
+    assert "社会的評判と面子" in template.value_profile_structured["father_profile"]
+    assert "father_plan_collapse" in template.inference_rules_map
+    assert "father_externalize" in template.behavioral_principles
 
     session = Session.create()
     session.enneagram = _base_profile(primary_type=7, wing=6)
@@ -92,13 +130,17 @@ def test_7w6_fukumoto_template() -> None:
     instruction = get_enneagram_instruction(session)
     assert instruction is not None
     assert "7w6" in instruction
-    assert "Fukumoto-Style_7w6" in instruction
+    assert "Fukumoto-Style_7w6 + Father" in instruction
     assert "好む" in instruction
     assert "刺激で上書き" in instruction
+    assert "Father" in instruction
+    assert "理想化した未来のシナリオに固執する" in instruction
+    assert "社会的評判と面子" in instruction
 
     report = format_report_plain(_base_profile(primary_type=7, wing=6))
-    assert "Fukumoto-Style_7w6" in report
+    assert "Fukumoto-Style_7w6 + Father" in report
     assert "尊敬する" in report
+    assert "失望は沈黙" in report
 
 
 def test_3w2_senior_profile() -> None:
@@ -150,6 +192,35 @@ def test_3w4_boss_model_merged() -> None:
     report = format_report_plain(_base_profile(primary_type=3, wing=4))
     assert "3w4" in report
     assert "上司モデル" in report
+
+
+def test_1w9_mother_template_in_instruction() -> None:
+    template = get_wing_template(1, 9)
+    assert template is not None
+    assert template.model_name == "Mother_1w9"
+    assert template.label == "道徳 × 調和 × 抑制"
+    assert "あるべき姿" in template.decision_criteria["should_be_adherence"]
+    assert "爆発的に放出" in template.inference_rules_map["anger_suppression_overflow"]
+    assert "幼少期の混沌" in template.behavioral_principles["order_compensates_chaos"]
+    assert "不必要でもタスクの完璧さ" in template.value_profile
+
+    session = Session.create()
+    session.enneagram = _base_profile(primary_type=1, wing=9)
+    session.phase = ConversationPhase.CORE
+
+    instruction = get_enneagram_instruction(session)
+    assert instruction is not None
+    assert "1w9" in instruction
+    assert "Mother_1w9" in instruction
+    assert "道徳 × 調和 × 抑制" in instruction
+    assert "溢れるまで抑制され" in instruction
+    assert "隠された行動は不正" in instruction
+    assert "家族の調和" in instruction
+
+    report = format_report_plain(_base_profile(primary_type=1, wing=9))
+    assert "1w9" in report
+    assert "直接対立を避け" in report
+    assert "規則の厳守による安全" in report
 
 
 def test_1w2_template_in_instruction() -> None:
@@ -280,13 +351,21 @@ def test_4w5_deepsoul_template() -> None:
 def test_4w3_saint_exupery_merged_template() -> None:
     template = get_wing_template(4, 3)
     assert template is not None
-    assert template.model_name == "Saint-Exupery_4w3_Profile"
+    assert template.model_name == "Saint-Exupery_4w3_Profile + Brother"
     assert template.label == "喪失 × 自意識 × 美学"
     assert "本物か偽物か" in template.decision_criteria["inner_truth"]
     assert "象徴化し、詩的な物語へ" in template.inference_rules_map["rule_2_pain_to_symbol"]
     assert "深い共鳴" in template.behavioral_principles["principle_7_deep_resonance"]
     assert "本物の感情" in template.value_profile_structured["core_values"]
     assert "喪失の意味づけ" in template.value_profile_structured["desires"]
+    assert "brother_comparative_identity" in template.decision_criteria
+    assert "（Brother）" in template.decision_criteria["brother_comparative_identity"]
+    assert "brother_freedom_from_norms" in template.decision_criteria
+    assert "brother_conformity_threat" in template.inference_rules_map
+    assert "brother_reject_should_norms" in template.behavioral_principles
+    assert "brother_profile" in template.value_profile_structured
+    assert "聖域としての孤独" in template.value_profile_structured["brother_profile"]
+    assert "同調より真正性" in template.value_profile_structured["brother_profile"]
 
     session = Session.create()
     session.enneagram = _base_profile(primary_type=4, wing=3)
@@ -295,10 +374,14 @@ def test_4w3_saint_exupery_merged_template() -> None:
     instruction = get_enneagram_instruction(session)
     assert instruction is not None
     assert "4w3" in instruction
-    assert "Saint-Exupery_4w3_Profile" in instruction
+    assert "Saint-Exupery_4w3_Profile + Brother" in instruction
     assert "喪失 × 自意識 × 美学" in instruction
     assert "本物の感情" in instruction
     assert "寓話" in instruction
+    assert "Brother" in instruction
+    assert "個人的世界への退避" in instruction
+    assert "同調より真正性" in instruction
+    assert "あるべき」を拒む" in instruction
 
 
 def test_report_includes_wing_template() -> None:
